@@ -1,198 +1,37 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>АНАЛитика бабок</title>
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
-    <script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';</script>
-    
-    <style>
-        :root {
-            --accent: #EF3124;
-            --bg: #000000;
-            --card-bg: #1c1c1e;
-            --text-main: #ffffff;
-            --text-muted: #8e8e93;
-            --border: #2c2c2e;
-            --safe-area-bottom: env(safe-area-inset-bottom, 20px);
-        }
-
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
-        body { background-color: var(--bg); color: var(--text-main); overscroll-behavior-y: none; }
-        
-        .app-container { max-width: 500px; margin: 0 auto; height: 100vh; display: flex; flex-direction: column; position: relative; }
-        
-        .header { display: flex; justify-content: space-between; align-items: center; padding: 20px 20px 10px; background: rgba(0,0,0,0.9); position: sticky; top: 0; z-index: 10; border-bottom: 1px solid var(--border); }
-        .header h1 { font-size: 24px; font-weight: 800; letter-spacing: -0.5px; }
-        .btn-clear { background: transparent; border: 1px solid var(--border); color: var(--text-muted); padding: 6px 12px; border-radius: 10px; font-size: 12px; cursor: pointer; }
-        
-        .content { flex: 1; overflow-y: auto; padding: 15px 20px 100px; }
-        .view-section { display: none; animation: fadeIn 0.3s ease; }
-        .view-section.active { display: block; }
-        
-        .card { background: var(--card-bg); border-radius: 20px; padding: 20px; margin-bottom: 15px; }
-        .card-title { font-size: 16px; font-weight: 700; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; }
-        
-        .balance { font-size: 34px; font-weight: 800; }
-        .meta-info { font-size: 12px; color: var(--text-muted); margin-top: 5px; }
-
-        .upload-box { border: 2px dashed #3a3a3c; border-radius: 16px; padding: 20px; text-align: center; cursor: pointer; margin-bottom: 15px; background: rgba(255,255,255,0.02); }
-        .upload-box input { display: none; }
-        .upload-icon { font-size: 28px; margin-bottom: 5px; }
-        .upload-title { font-size: 14px; font-weight: 600; }
-
-        .chart-container { position: relative; height: 220px; width: 100%; margin: 10px 0; }
-        
-        .tx-list { display: flex; flex-direction: column; gap: 12px; }
-        .tx-item { display: flex; justify-content: space-between; align-items: center; }
-        .tx-left { display: flex; align-items: center; gap: 12px; }
-        .tx-icon { width: 40px; height: 40px; border-radius: 12px; background: rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: center; font-size: 18px; }
-        .tx-name { font-size: 15px; font-weight: 600; }
-        .tx-sub { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
-        .tx-amount { font-size: 15px; font-weight: 700; color: #ff5252; }
-        .tx-cashback { font-size: 11px; color: #4caf50; font-weight: 600; margin-top: 2px; }
-
-        .insight-box { background: rgba(239, 49, 36, 0.1); border: 1px solid rgba(239, 49, 36, 0.3); padding: 15px; border-radius: 16px; margin-bottom: 15px; }
-        .insight-title { font-size: 13px; color: #ffcccc; font-weight: 600; margin-bottom: 5px; }
-        .insight-value { font-size: 20px; font-weight: bold; color: var(--accent); }
-        
-        .cashback-box { background: rgba(76, 175, 80, 0.1); border: 1px solid rgba(76, 175, 80, 0.3); padding: 15px; border-radius: 16px; margin-top: 15px; }
-        .cashback-title { font-size: 13px; color: #a5d6a7; font-weight: 600; margin-bottom: 5px; }
-        .cashback-value { font-size: 22px; font-weight: bold; color: #4caf50; }
-
-        .filter-select { width: 100%; background: #000; color: #fff; border: 1px solid var(--border); padding: 12px 15px; border-radius: 12px; font-size: 15px; outline: none; margin-bottom: 15px; font-weight: 500; appearance: none; }
-        .bank-selector-wrap { background: #1c1c1e; padding: 15px; border-radius: 16px; margin-bottom: 15px; border: 1px solid var(--border); }
-        
-        .savings-list { display: flex; flex-direction: column; gap: 10px; }
-        .savings-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; background: rgba(255,255,255,0.05); border-radius: 12px; cursor: pointer; }
-        .savings-item label { flex: 1; display: flex; justify-content: space-between; align-items: center; margin-left: 10px; font-size: 14px; cursor: pointer; }
-        input[type="checkbox"] { accent-color: var(--accent); width: 20px; height: 20px; }
-
-        .bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 500px; background: rgba(15,15,15,0.95); border-top: 1px solid var(--border); display: flex; justify-content: space-around; padding: 10px 0 var(--safe-area-bottom); z-index: 100; backdrop-filter: blur(10px); }
-        .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; color: var(--text-muted); font-size: 11px; font-weight: 500; cursor: pointer; }
-        .nav-item.active { color: var(--accent); }
-        .nav-icon { font-size: 22px; margin-bottom: 4px; }
-
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-    </style>
-</head>
-<body>
-
-<div class="app-container">
-    <div class="header">
-        <h1>АНАЛитика бабок</h1>
-        <button class="btn-clear" onclick="clearData()">Сбросить</button>
-    </div>
-
-    <div class="content">
-        <!-- ВКЛАДКА: ОБЗОР -->
-        <div id="view-overview" class="view-section active">
-            
-            <div class="bank-selector-wrap">
-                <label for="bankSelect" style="font-size:14px; font-weight:700; color:var(--accent); margin-bottom:8px; display:block;">Выбери банк, жид:</label>
-                <select id="bankSelect" class="filter-select" style="margin-bottom:0; border-color:#3a3a3c;">
-                    <option value="auto">Автоопределение (Любой банк)</option>
-                    <option value="alfa">Альфа-Банк (Excel / CSV)</option>
-                    <option value="sber">Сбербанк (PDF / Excel)</option>
-                    <option value="tinkoff">Т-Банк (TXT / Excel / CSV)</option>
-                    <option value="yandex">Яндекс Пэй (PDF)</option>
-                </select>
-            </div>
-
-            <div class="upload-box" onclick="document.getElementById('fileInput').click()">
-                <input type="file" id="fileInput" accept=".csv, .xlsx, .xls, .txt, .pdf" onchange="handleFile(this.files[0])">
-                <div class="upload-icon">📥</div>
-                <div class="upload-title">Загрузить выписку</div>
-                <div class="meta-info">Нажми сюда, чтобы выбрать файл</div>
-            </div>
-
-            <div class="card" id="mainCard" style="display: none;">
-                <div class="meta-info" style="margin-top: 0; margin-bottom: 5px;">Общие расходы</div>
-                <div class="balance" id="totalExpense">0 ₽</div>
-                
-                <div id="cashbackBox" class="cashback-box" style="display:none;">
-                    <div class="cashback-title">💸 Начислено кэшбэка</div>
-                    <div class="cashback-value" id="totalCashback">+ 0 ₽</div>
-                </div>
-
-                <div class="meta-info" id="fileInfo" style="margin-top: 15px;"></div>
-            </div>
-
-            <div class="card" id="chartCard" style="display: none;">
-                <div class="card-title">Куда ушли деньги</div>
-                <div class="chart-container"><canvas id="categoryChart"></canvas></div>
-            </div>
-        </div>
-
-        <!-- ВКЛАДКА: УМНАЯ АНАЛИТИКА -->
-        <div id="view-analytics" class="view-section">
-            <div class="card">
-                <div class="card-title">Главный пылесос бюджета</div>
-                <div class="insight-box">
-                    <div class="insight-title">Больше всего спущено на:</div>
-                    <div class="insight-value" id="topCategory">Нет данных</div>
-                    <div class="meta-info" id="topCategoryPercent"></div>
-                </div>
-                
-                <h3 style="font-size: 15px; margin-bottom: 10px; margin-top: 20px;">Сколько ты мог бы сохранить</h3>
-                <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 15px;">Выбери статьи, на которых можно было притормозить:</p>
-                
-                <div class="insight-box" style="background: rgba(76, 175, 80, 0.1); border-color: rgba(76, 175, 80, 0.3);">
-                    <div class="insight-title" style="color: #a5d6a7;">Спасённые деньги:</div>
-                    <div class="insight-value" id="savingsAmount" style="color: #4caf50;">0 ₽</div>
-                </div>
-                
-                <div class="savings-list" id="savingsList"></div>
-            </div>
-        </div>
-
-        <!-- ВКЛАДКА: ОПЕРАЦИИ -->
-        <div id="view-transactions" class="view-section">
-            <div class="card" style="background: transparent; padding: 0; border: none;">
-                <select class="filter-select" id="catFilter" onchange="renderTransactions()">
-                    <option value="all">Все категории</option>
-                </select>
-                
-                <div class="tx-list" id="txList">
-                    <div style="text-align: center; color: var(--text-muted); margin-top: 20px;">Загрузите выписку</div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- НАВИГАЦИЯ -->
-    <div class="bottom-nav">
-        <div class="nav-item active" onclick="switchTab('overview', this)">
-            <div class="nav-icon">📊</div>
-            <span>Обзор</span>
-        </div>
-        <div class="nav-item" onclick="switchTab('analytics', this)">
-            <div class="nav-icon">💡</div>
-            <span>Аналитика</span>
-        </div>
-        <div class="nav-item" onclick="switchTab('transactions', this)">
-            <div class="nav-icon">📋</div>
-            <span>Операции</span>
-        </div>
-    </div>
-</div>
-
 <script>
     let myChart = null;
     let transactions = [];
 
+    // База MCC кодов для железобетонного определения
+    const mccMap = {
+        // Супермаркеты и продукты
+        '5411': 'Супермаркеты', '5499': 'Супермаркеты', '5422': 'Супермаркеты', '5462': 'Супермаркеты',
+        // Фастфуд и рестораны
+        '5814': 'Фастфуд и Кафе', '5812': 'Фастфуд и Кафе', '5811': 'Фастфуд и Кафе', '5813': 'Фастфуд и Кафе',
+        // Транспорт, такси, каршеринг, АЗС
+        '4121': 'Транспорт', '4111': 'Транспорт', '4131': 'Транспорт', '4789': 'Транспорт', '5541': 'Транспорт', '5542': 'Транспорт', '7512': 'Транспорт',
+        // Связь, интернет, подписки
+        '4814': 'Подписки и Связь', '4812': 'Подписки и Связь', '4899': 'Подписки и Связь', '5192': 'Подписки и Связь',
+        // Развлечения, кино, парки
+        '7999': 'Развлечения', '7832': 'Развлечения', '7922': 'Развлечения', '7996': 'Развлечения',
+        // Аптеки и медицина
+        '5912': 'Здоровье', '8011': 'Здоровье', '8099': 'Здоровье', '8062': 'Здоровье', '8043': 'Здоровье',
+        // Маркетплейсы, одежда, онлайн-магазины
+        '5300': 'Маркетплейсы', '5311': 'Маркетплейсы', '5399': 'Маркетплейсы', '5262': 'Маркетплейсы', '5999': 'Маркетплейсы', '5691': 'Маркетплейсы',
+        // Игры и софт
+        '5732': 'Игры и Софт', '5815': 'Игры и Софт', '5816': 'Игры и Софт', '7994': 'Игры и Софт'
+    };
+
+    // Правила по ключевым словам (если MCC нет или он неизвестен)
     const categoryRules = {
         'Супермаркеты': ['пятерочка', 'магнит', 'перекресток', 'ашан', 'лента', 'спар', 'вкусвилл', 'миндаль', 'пеликан', 'витаград', 'продукты', 'супермаркет', 'самокат', 'samokat'],
-        'Фастфуд и Кафе': ['вкусно', 'burger king', 'kfc', 'бургер', 'додо', 'пицца', 'шаурма', 'ростикс', 'ресторан', 'кафе', 'кофе', 'столовая', 'доставка', 'eda', 'еда'],
+        'Фастфуд и Кафе': ['вкусно', 'burger king', 'kfc', 'бургер', 'додо', 'пицца', 'шаурма', 'ростикс', 'ресторан', 'кафе', 'кофе', 'столовая', 'доставка', 'eda', 'еда', 'yandex eda'],
+        'Транспорт': ['яндекс.такси', 'такси', 'taxi', 'fasten', 'yandex go', 'каршеринг', 'метро', 'ржд', 'авиа', 'бензин', 'азс', 'лукойл', 'газпром', 'драйв', 'drive'],
         'Игры и Софт': ['lis-skins', 'majestic', 'steam', 'epic games', 'playstation', 'vk play', 'blizzard', 'digital goods'],
-        'Подписки и Связь': ['vk music', 'yandex', 'яндекс', 'подписка', 'pure', 'twinby', 'твинби', 'mamba', 'telegram', 'мегафон', 'мтс', 'билайн', 'tele2', 'знакомства'],
         'Развлечения': ['mori cinema', 'кино', 'royal forest', 'парк', 'билет', 'клуб', 'афиша', 'кинотеатр'],
-        'Транспорт': ['яндекс.такси', 'такси', 'каршеринг', 'метро', 'ржд', 'авиа', 'бензин', 'азс', 'лукойл', 'газпром'],
-        'Маркетплейсы': ['ozon', 'wildberries', 'вайлдберриз', 'aliexpress', 'мегамаркет', 'market'],
-        'Здоровье': ['аптека', 'планета здоровья', 'вита', 'медицина', 'клиника', 'инвитро'],
+        'Маркетплейсы': ['ozon', 'wildberries', 'вайлдберриз', 'aliexpress', 'мегамаркет', 'market', 'яндекс маркет'],
+        'Здоровье': ['аптека', 'планета здоровья', 'вита', 'медицина', 'клиника', 'инвитро', 'фарм'],
+        'Подписки и Связь': ['vk music', 'yandex', 'яндекс', 'подписка', 'pure', 'twinby', 'твинби', 'mamba', 'telegram', 'мегафон', 'мтс', 'билайн', 'tele2', 'знакомства'],
         'Переводы': ['перевод', 'пополнение', 'sbp', 'сбп']
     };
 
@@ -219,8 +58,20 @@
         element.classList.add('active');
     }
 
+    // УМНЫЙ ДЕТЕКТОР (Сначала ищет MCC код, если не нашел - ищет по словам)
     function detectCategory(text) {
         let fullText = text.toLowerCase();
+        
+        // Пытаемся вытащить 4 цифры, если они похожи на MCC (например "mcc 4121" или просто "4121")
+        let mccMatch = fullText.match(/(?:mcc\s*:?\s*)?(\d{4})/i);
+        if (mccMatch) {
+            let code = mccMatch[1];
+            if (mccMap[code]) {
+                return mccMap[code];
+            }
+        }
+
+        // Если MCC нет или он неизвестен, идем по ключевым словам
         for (const [catName, keywords] of Object.entries(categoryRules)) {
             if (keywords.some(kw => fullText.includes(kw))) return catName;
         }
@@ -322,12 +173,10 @@
         } else alert('Не найдены расходы в TXT файле Т-Банка.');
     }
 
-    // УМНЫЙ ПАРСЕР ДЛЯ АЛЬФЫ И ДРУГИХ БАНКОВ
     function parseUniversalExcel(rows, fileName, bankId) {
         let headerIndex = -1;
         let cols = { date: -1, amount: -1, type: -1, exp: -1, name: -1, cat: -1, cashback: -1 };
 
-        // Ищем заголовки колонок
         for (let i = 0; i < Math.min(rows.length, 150); i++) {
             const row = rows[i].map(c => String(c).toLowerCase().trim());
             if (row.length < 2) continue;
@@ -363,19 +212,11 @@
                 let num = cleanNumber(rawAmount);
                 if (isNaN(num) || num === 0) continue;
 
-                // Проверяем тип операции по колонке "Тип", если она есть (это решает проблему Альфы)
                 let typeVal = cols.type !== -1 ? String(row[cols.type]).toLowerCase() : '';
                 let isExplicitExpenseByColumnType = typeVal.includes('списание') || typeVal.includes('расход') || typeVal.includes('оплата') || typeVal.includes('покупка');
                 
-                // Если тип явно пополнение/доход - пропускаем
-                if (!isExplicitExpenseByColumnType && cols.type !== -1 && (typeVal.includes('пополнение') || typeVal.includes('приход'))) {
-                    continue; 
-                }
-
-                // Если колонки Тип нет, фильтруем по минусу (Т-Банк, Сбер без явного Расхода)
-                if (cols.type === -1 && cols.exp === -1 && num > 0 && !String(rawAmount).includes('-')) {
-                    continue;
-                }
+                if (!isExplicitExpenseByColumnType && cols.type !== -1 && (typeVal.includes('пополнение') || typeVal.includes('приход'))) continue; 
+                if (cols.type === -1 && cols.exp === -1 && num > 0 && !String(rawAmount).includes('-')) continue;
 
                 let amount = Math.abs(num);
                 let dateVal = row[cols.date] || '';
@@ -383,13 +224,13 @@
                 let description = (cols.name !== -1 && row[cols.name]) ? String(row[cols.name]).trim() : '';
                 let bankCategory = (cols.cat !== -1 && row[cols.cat]) ? String(row[cols.cat]).trim() : '';
                 
-                // Парсим кэшбэк, если колонка найдена
                 let cashbackVal = 0;
                 if (cols.cashback !== -1 && row[cols.cashback]) {
                     let cbNum = cleanNumber(row[cols.cashback]);
                     if (!isNaN(cbNum) && cbNum > 0) cashbackVal = cbNum;
                 }
 
+                // Передаем всё содержимое строки, чтобы детектор нашел MCC-код (даже если он записан в описании)
                 newParsed.push({
                     amount,
                     name: description || bankCategory || 'Покупка',
@@ -422,8 +263,7 @@
         document.getElementById('chartCard').style.display = 'block';
         document.getElementById('fileInfo').innerText = (localStorage.getItem('dzyn_smart_meta') || 'Файл') + ' (' + transactions.length + ' операций)';
 
-        let total = 0;
-        let totalCashback = 0;
+        let total = 0, totalCashback = 0;
         const catMap = {};
         
         transactions.forEach(tx => {
@@ -434,7 +274,6 @@
 
         document.getElementById('totalExpense').innerText = total.toLocaleString('ru-RU', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' ₽';
 
-        // Отображение кэшбэка
         if (totalCashback > 0) {
             document.getElementById('cashbackBox').style.display = 'block';
             document.getElementById('totalCashback').innerText = '+ ' + totalCashback.toLocaleString('ru-RU', {minimumFractionDigits: 2}) + ' ₽';
@@ -533,5 +372,3 @@
 
     function escapeHtml(str) { return String(str).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m])); }
 </script>
-</body>
-</html>
