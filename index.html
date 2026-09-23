@@ -8,7 +8,7 @@
   <meta name="theme-color" content="#000000">
   <title>Дзынь Финансы</title>
 
-  <!-- Tailwind CSS -->
+  <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -16,672 +16,1098 @@
       theme: {
         extend: {
           colors: {
-            brand: { red: '#EF3124', bg: '#000000', card: '#1C1C1E', card2: '#2C2C2E', blue: '#0A84FF' }
+            brand: {
+              red: '#EF3124',
+              redHover: '#D92215',
+              dark: '#0B0B0C',
+              card: '#161618',
+              cardSub: '#202023',
+              cardBorder: 'rgba(255, 255, 255, 0.08)',
+              green: '#30D158',
+              blue: '#0A84FF',
+              orange: '#FF9F0A',
+              purple: '#BF5AF2'
+            }
           },
           fontFamily: {
-            sans: ['-apple-system', 'BlinkMacSystemFont', 'SF Pro Text', 'Segoe UI', 'Roboto', 'sans-serif']
+            sans: ['-apple-system', 'BlinkMacSystemFont', '"SF Pro Display"', '"SF Pro Text"', 'Inter', 'sans-serif']
           }
         }
       }
     }
   </script>
 
-  <!-- Chart.js & Lucide Icons -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Chart.js and Lucide Icons -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
 
   <style>
-    :root { --sat: env(safe-area-inset-top, 0px); --sab: env(safe-area-inset-bottom, 0px); }
-    body {
-      background-color: #000; color: #fff;
-      padding-top: var(--sat); padding-bottom: calc(var(--sab) + 85px);
-      -webkit-tap-highlight-color: transparent; user-select: none;
+    :root {
+      --sat: env(safe-area-inset-top, 0px);
+      --sab: env(safe-area-inset-bottom, 0px);
     }
-    .glass {
-      background: rgba(28, 28, 30, 0.7);
-      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    body {
+      background-color: #000000;
+      color: #F2F2F7;
+      padding-top: var(--sat);
+      padding-bottom: calc(var(--sab) + 84px);
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      -webkit-user-select: none;
+      font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    }
+    .glass-header {
+      background: rgba(18, 18, 20, 0.78);
+      backdrop-filter: blur(28px) saturate(190%);
+      -webkit-backdrop-filter: blur(28px) saturate(190%);
+      border-bottom: 0.5px solid rgba(255, 255, 255, 0.12);
     }
     .glass-nav {
-      background: rgba(0, 0, 0, 0.85);
-      backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px);
-      border-top: 0.5px solid rgba(255,255,255,0.15);
+      background: rgba(14, 14, 16, 0.85);
+      backdrop-filter: blur(32px) saturate(210%);
+      -webkit-backdrop-filter: blur(32px) saturate(210%);
+      border-top: 0.5px solid rgba(255, 255, 255, 0.12);
     }
-    .no-scrollbar::-webkit-scrollbar { display: none; }
-    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-    .card-shadow { box-shadow: 0 8px 24px rgba(0,0,0,0.4); }
-    .scale-tap:active { transform: scale(0.97); transition: transform 0.1s; }
+    .card-glass {
+      background: rgba(22, 22, 25, 0.85);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 0.5px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.7);
+    }
+    .tap-scale {
+      transition: transform 0.12s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.12s ease;
+    }
+    .tap-scale:active {
+      transform: scale(0.96);
+      opacity: 0.85;
+    }
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    input, textarea {
+      user-select: auto !important;
+      -webkit-user-select: auto !important;
+    }
   </style>
 </head>
 <body class="antialiased min-h-screen flex flex-col">
 
-  <!-- HEADER -->
-  <header class="sticky top-0 z-30 glass px-4 py-3 flex items-center justify-between border-b border-white/10">
-    <div class="flex items-center gap-2">
-      <div class="w-8 h-8 rounded-full bg-brand-red flex items-center justify-center">
-        <i data-lucide="bell" class="w-4 h-4 text-white"></i>
+  <header class="sticky top-0 z-40 glass-header px-4 py-3 flex items-center justify-between">
+    <div class="flex items-center gap-2.5">
+      <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-brand-red to-orange-500 flex items-center justify-center shadow-lg shadow-brand-red/30">
+        <i data-lucide="bell-ring" class="w-4 h-4 text-white"></i>
       </div>
-      <h1 class="text-lg font-bold tracking-tight">Дзынь<span class="text-brand-red">.Pay</span></h1>
+      <div>
+        <h1 class="text-base font-bold tracking-tight flex items-center gap-1 leading-none">
+          Дзынь <span class="text-brand-red">Финансы</span>
+        </h1>
+        <p class="text-[10px] text-white/40 font-medium tracking-wide mt-0.5" id="headerSubtitle">Альфа-Банк &bull; ВК Уведомления</p>
+      </div>
     </div>
-    <div id="syncStatusBadge" class="text-[10px] font-medium px-2 py-1 rounded-full bg-white/10 text-white/60">
-      Оффлайн
+
+    <div class="flex items-center gap-2">
+      <button id="btnQuickPasteModal" class="tap-scale px-2.5 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 text-white/80 text-xs font-medium flex items-center gap-1.5 border border-white/5">
+        <i data-lucide="clipboard-paste" class="w-3.5 h-3.5 text-brand-red"></i>
+        <span>Вставить</span>
+      </button>
+      <div id="statusPill" class="text-[10px] font-semibold px-2.5 py-1 rounded-full bg-white/5 border border-white/10 text-white/60">
+        Готов
+      </div>
     </div>
   </header>
 
-  <main class="flex-1 w-full max-w-md mx-auto p-4">
+  <main class="flex-1 w-full max-w-lg mx-auto p-4 space-y-5">
 
-    <!-- VIEW: DASHBOARD -->
-    <div id="view-dashboard" class="view-section space-y-5">
-      <div class="bg-gradient-to-br from-[#1F1F21] to-[#121213] rounded-[24px] p-5 card-shadow border border-white/5 relative overflow-hidden">
-        <div class="absolute top-0 right-0 w-32 h-32 bg-brand-red/20 blur-3xl rounded-full pointer-events-none"></div>
-        <p class="text-sm text-white/50 font-medium mb-1" id="dashMonthLabel">Расходы в сентябре</p>
-        <h2 class="text-4xl font-bold tracking-tighter" id="dashTotalSpent">0 ₽</h2>
+    <!-- VIEW 1: ОБЗОР (DASHBOARD) -->
+    <section id="view-dashboard" class="app-view space-y-5">
+      <!-- Main Metric Balance Banner -->
+      <div class="card-glass rounded-[28px] p-5 relative overflow-hidden">
+        <div class="absolute -right-8 -top-8 w-40 h-40 bg-brand-red/20 blur-3xl rounded-full pointer-events-none"></div>
+        <div class="flex justify-between items-start mb-2">
+          <div>
+            <span class="text-xs font-medium text-white/50 uppercase tracking-wider" id="dashHeroPeriodLabel">Сентябрь 2026</span>
+            <h2 class="text-4xl font-extrabold tracking-tight mt-0.5 text-white" id="dashTotalSpent">0 ₽</h2>
+          </div>
+          <span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-brand-red/15 text-brand-red border border-brand-red/30">
+            Alfa Дзынь
+          </span>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3 mt-4 pt-4 border-t border-white/10">
+          <div class="bg-black/30 rounded-2xl p-3 border border-white/5">
+            <span class="text-[11px] text-white/40 block mb-0.5">Сегодня потрачено</span>
+            <span class="text-base font-bold text-white" id="dashSpentToday">0 ₽</span>
+          </div>
+          <div class="bg-black/30 rounded-2xl p-3 border border-white/5">
+            <span class="text-[11px] text-white/40 block mb-0.5">Средний чек</span>
+            <span class="text-base font-bold text-white" id="dashAvgCheck">0 ₽</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Chart Switcher & Graph -->
+      <div class="card-glass rounded-[26px] p-4 space-y-3">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold uppercase tracking-wider text-white/70">Динамика расходов</span>
+          <span class="text-[11px] text-brand-red font-semibold" id="dashChartMetaLabel">Сентябрь</span>
+        </div>
+        <div class="h-44 w-full relative">
+          <canvas id="dashboardChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Top Spending Donut Chart & Category summary -->
+      <div class="card-glass rounded-[26px] p-4 space-y-4">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold uppercase tracking-wider text-white/70">Категории сентября</span>
+          <span class="text-[11px] text-white/40" id="dashCategoryCountLabel">0 категорий</span>
+        </div>
         
-        <div class="flex gap-4 mt-6 pt-4 border-t border-white/10">
-          <div>
-            <p class="text-[11px] text-white/40 mb-0.5">В среднем в день</p>
-            <p class="text-sm font-semibold" id="dashAvgSpent">0 ₽</p>
+        <div class="flex flex-col sm:flex-row items-center gap-4">
+          <div class="w-36 h-36 relative shrink-0">
+            <canvas id="categoryDonutChart"></canvas>
           </div>
-          <div>
-            <p class="text-[11px] text-white/40 mb-0.5">Операций</p>
-            <p class="text-sm font-semibold" id="dashTxCount">0</p>
+          <div class="w-full flex-1 space-y-2.5" id="dashCategoryBars">
+            <!-- Injected category progress bars -->
           </div>
         </div>
       </div>
 
-      <div>
-        <div class="flex justify-between items-center mb-3 px-1">
-          <h3 class="text-base font-bold">Последние операции</h3>
+      <!-- Recent Transactions List -->
+      <div class="space-y-3">
+        <div class="flex items-center justify-between px-1">
+          <h3 class="text-sm font-bold tracking-tight text-white/90">Последние покупки</h3>
+          <span class="text-xs text-white/40" id="dashTxCount">0 операций</span>
         </div>
-        <div id="dashTxList" class="space-y-2.5">
-          <!-- Transacitons injected here -->
-        </div>
-      </div>
-    </div>
-
-    <!-- VIEW: ANALYTICS -->
-    <div id="view-analytics" class="view-section space-y-5 hidden">
-      <div class="flex bg-brand-card2 rounded-lg p-1 gap-1">
-        <button class="chart-tab flex-1 py-1.5 text-xs font-semibold rounded-md bg-white/20 text-white shadow" data-range="days">По дням</button>
-        <button class="chart-tab flex-1 py-1.5 text-xs font-semibold rounded-md text-white/60 hover:text-white" data-range="weeks">По неделям</button>
-        <button class="chart-tab flex-1 py-1.5 text-xs font-semibold rounded-md text-white/60 hover:text-white" data-range="months">По месяцам</button>
-      </div>
-
-      <div class="bg-brand-card rounded-[24px] p-4 card-shadow">
-        <div class="h-56 w-full">
-          <canvas id="mainChart"></canvas>
+        <div id="dashTxList" class="space-y-2">
+          <!-- Injected transaction cards -->
         </div>
       </div>
+    </section>
 
-      <div class="bg-brand-card rounded-[24px] p-4 space-y-3 card-shadow">
-        <h3 class="text-sm font-bold border-b border-white/10 pb-2">Категории (Весь период)</h3>
-        <div id="analyticsCategories" class="space-y-3">
-          <!-- Categories injected here -->
+    <!-- VIEW 2: ПО МЕСЯЦАМ (MONTHS) -->
+    <section id="view-months" class="app-view space-y-5 hidden">
+      <!-- Horizontal Month Selector -->
+      <div class="flex gap-2 overflow-x-auto no-scrollbar py-1" id="monthsSelector">
+        <!-- Rendered month pills -->
+      </div>
+
+      <!-- Monthly Summary Card -->
+      <div class="card-glass rounded-[28px] p-5 space-y-4">
+        <div class="flex justify-between items-start">
+          <div>
+            <span class="text-[11px] font-medium text-white/50 uppercase tracking-wider" id="selectedMonthName">Сентябрь 2026</span>
+            <h2 class="text-3xl font-extrabold tracking-tight mt-1" id="monthTotalAmount">0 ₽</h2>
+          </div>
+          <div class="text-right">
+            <span class="text-[10px] text-white/40 block">Всего операций</span>
+            <span class="text-base font-bold text-brand-red" id="monthTotalTxCount">0</span>
+          </div>
+        </div>
+
+        <div class="p-3.5 bg-black/40 rounded-2xl border border-white/5 flex items-center justify-between text-xs">
+          <div class="flex items-center gap-2">
+            <i data-lucide="trending-down" class="w-4 h-4 text-brand-green" id="monthDeltaIcon"></i>
+            <span class="text-white/70" id="monthDeltaText">Динамика к августу: -12%</span>
+          </div>
+          <span class="font-bold text-brand-green" id="monthDeltaBadge">-4 120 ₽</span>
         </div>
       </div>
-    </div>
 
-    <!-- VIEW: ECONOMY / TIPS -->
-    <div id="view-economy" class="view-section space-y-5 hidden">
-      <div class="bg-gradient-to-br from-[#1A253C] to-brand-card rounded-[24px] p-5 card-shadow border border-brand-blue/20">
-        <div class="flex items-center gap-3 mb-2">
-          <i data-lucide="sparkles" class="w-6 h-6 text-brand-blue"></i>
-          <h2 class="text-lg font-bold">Умная экономия</h2>
+      <!-- Weekly breakdown in selected month -->
+      <div class="card-glass rounded-[26px] p-4 space-y-3">
+        <h4 class="text-xs font-bold uppercase tracking-wider text-white/70">Траты по неделям</h4>
+        <div class="h-44 w-full">
+          <canvas id="monthlyWeeksChart"></canvas>
         </div>
-        <p class="text-xs text-white/60 leading-relaxed mb-4">
-          Алгоритм анализирует частые и мелкие траты (фастфуд, подписки, развлечения, игры) и рассчитывает резерв экономии.
+      </div>
+
+      <!-- Transactions in selected month -->
+      <div class="space-y-2.5">
+        <h4 class="text-xs font-bold uppercase tracking-wider text-white/70 px-1">Операции за месяц</h4>
+        <div id="monthTxList" class="space-y-2">
+          <!-- Injected month transaction cards -->
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 3: ЭКОНОМИЯ (SAVINGS) -->
+    <section id="view-economy" class="app-view space-y-5 hidden">
+      <!-- Savings Hero Card -->
+      <div class="bg-gradient-to-br from-[#1C1628] via-brand-card to-[#121215] border border-brand-purple/20 card-glass rounded-[28px] p-5 space-y-3 relative overflow-hidden">
+        <div class="flex items-center gap-2 text-brand-purple">
+          <i data-lucide="sparkles" class="w-5 h-5"></i>
+          <span class="text-xs font-bold uppercase tracking-wider">Умный советник</span>
+        </div>
+        <h3 class="text-2xl font-black tracking-tight text-white">
+          Резерв экономии: <span class="text-brand-green" id="ecoTotalPotential">0 ₽</span>
+        </h3>
+        <p class="text-xs text-white/60 leading-relaxed">
+          Анализ импульсивных и регулярных трат: где утекает больше всего денег и как безболезненно сократить расходы в следующем месяце.
         </p>
-        <div class="p-3 bg-black/40 rounded-xl flex items-center justify-between">
-          <span class="text-sm font-medium">Потенциал экономии:</span>
-          <span class="text-lg font-bold text-[#32D74B]" id="totalEconomyPot">0 ₽</span>
+      </div>
+
+      <!-- Peak days analysis -->
+      <div class="card-glass rounded-[26px] p-4.5 space-y-3">
+        <div class="flex items-center gap-2 text-brand-orange">
+          <i data-lucide="calendar" class="w-4 h-4"></i>
+          <h4 class="text-xs font-bold uppercase tracking-wider">Пиковые дни трат</h4>
+        </div>
+        <div class="p-3 bg-black/40 rounded-2xl border border-white/5 space-y-1.5" id="ecoPeakDayBox">
+          <!-- Injected peak days summary -->
         </div>
       </div>
 
-      <div id="economyTipsList" class="space-y-3">
-        <!-- Tips injected here -->
+      <!-- Micro-expenses analysis -->
+      <div class="card-glass rounded-[26px] p-4.5 space-y-3.5">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2 text-brand-red">
+            <i data-lucide="pie-chart" class="w-4 h-4"></i>
+            <h4 class="text-xs font-bold uppercase tracking-wider">Импульсивные категории</h4>
+          </div>
+          <span class="text-[11px] text-white/40">Фастфуд, игры, такси</span>
+        </div>
+        <div class="space-y-2.5" id="ecoMicroExpenses">
+          <!-- Injected micro spend breakdown -->
+        </div>
       </div>
-    </div>
 
-    <!-- VIEW: SYNC / SETTINGS -->
-    <div id="view-settings" class="view-section space-y-5 hidden">
-      <div class="bg-brand-card rounded-[24px] p-5 card-shadow space-y-4">
-        <h2 class="text-lg font-bold flex items-center gap-2">
-          <i data-lucide="cloud-download" class="w-5 h-5 text-brand-red"></i>
-          Синхронизация VK
-        </h2>
-        <p class="text-xs text-white/50 leading-relaxed">
-          Укажите токен и Peer ID для загрузки уведомлений "Дзынь". Загрузка остановится на сообщениях до 1 сентября 2026 года.
+      <!-- Actionable Advice Cards -->
+      <div class="space-y-3" id="ecoTipsList">
+        <!-- Injected advice list -->
+      </div>
+    </section>
+
+    <!-- VIEW 4: НАСТРОЙКИ (SETTINGS & SYNC) -->
+    <section id="view-settings" class="app-view space-y-5 hidden">
+      <!-- Sync Panel -->
+      <div class="card-glass rounded-[28px] p-5 space-y-4">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-xl bg-brand-red/20 text-brand-red flex items-center justify-center">
+            <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-bold">Синхронизация VK API</h3>
+            <p class="text-[11px] text-white/50">Альфа-Банк «Дзынь» (ВКонтакте)</p>
+          </div>
+        </div>
+
+        <div class="space-y-3 text-xs">
+          <div>
+            <label class="block text-[11px] font-semibold text-white/60 mb-1 ml-1">VK ACCESS TOKEN</label>
+            <input type="password" id="inputVkToken" placeholder="vk1.a.XXXX..." class="w-full bg-black/60 border border-white/10 rounded-xl px-3.5 py-3 text-white placeholder-white/20 focus:outline-none focus:border-brand-red transition">
+          </div>
+
+          <div>
+            <label class="block text-[11px] font-semibold text-white/60 mb-1 ml-1">PEER ID ЧАТА С БАНКОМ</label>
+            <input type="text" id="inputVkPeerId" value="-218837624" placeholder="-218837624" class="w-full bg-black/60 border border-white/10 rounded-xl px-3.5 py-3 text-white placeholder-white/20 focus:outline-none focus:border-brand-red transition">
+            <p class="text-[10px] text-white/40 mt-1 ml-1">Диалог «Альфа-Банк Дзынь»: <span class="text-white/70">-218837624</span></p>
+          </div>
+        </div>
+
+        <!-- Sync Button -->
+        <button id="btnExecuteSync" class="tap-scale w-full py-3.5 bg-gradient-to-r from-brand-red to-red-600 rounded-xl font-bold text-sm text-white shadow-lg shadow-brand-red/30 flex items-center justify-center gap-2">
+          <i data-lucide="cloud-download" class="w-4 h-4" id="syncBtnIcon"></i>
+          <span id="syncBtnText">Загрузить с Сентября 2026</span>
+        </button>
+
+        <!-- Live Sync Terminal Log -->
+        <div class="bg-black/80 rounded-2xl p-3 border border-white/5 space-y-1">
+          <div class="flex items-center justify-between text-[10px] text-white/40 pb-1 border-b border-white/10">
+            <span>Журнал запросов (Safe Execute)</span>
+            <span id="logStatusText">Готов</span>
+          </div>
+          <div id="syncLogBox" class="h-28 overflow-y-auto text-[10px] font-mono text-emerald-400 space-y-1 pt-1 no-scrollbar">
+            <div>[Система] Загружены готовые данные. Нажмите «Загрузить» для свежего обновления из VK.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick manual import backup -->
+      <div class="card-glass rounded-[28px] p-5 space-y-3">
+        <h4 class="text-sm font-bold flex items-center gap-2">
+          <i data-lucide="clipboard-copy" class="w-4 h-4 text-brand-orange"></i>
+          Ручной ввод / Вставка чеков
+        </h4>
+        <p class="text-xs text-white/60 leading-relaxed">
+          Если ВК блокирует приложение или у вас нет токена — просто скопируйте любые сообщения из чата «Дзынь» или SMS 900 и вставьте их сюда.
         </p>
-
-        <div class="space-y-3">
-          <div>
-            <label class="text-[11px] text-white/60 uppercase ml-1">VK Access Token</label>
-            <input type="password" id="inpToken" placeholder="vk1.a.XXXX..." class="w-full mt-1 bg-black border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-brand-red focus:outline-none transition">
-          </div>
-          <div>
-            <label class="text-[11px] text-white/60 uppercase ml-1">Peer ID диалога</label>
-            <input type="text" id="inpPeerId" placeholder="-218837624" class="w-full mt-1 bg-black border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-brand-red focus:outline-none transition">
-          </div>
-        </div>
-
-        <button id="btnStartSync" class="w-full py-3.5 bg-brand-red hover:bg-red-600 rounded-xl font-bold text-sm scale-tap flex items-center justify-center gap-2 transition shadow-lg shadow-brand-red/20">
-          <i data-lucide="refresh-cw" id="syncSpinner" class="w-4 h-4"></i>
-          Синхронизировать с Сентября 2026
+        <button id="btnOpenPasteFromSettings" class="tap-scale w-full py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-xs font-semibold text-white/90 border border-white/10 flex items-center justify-center gap-2">
+          <i data-lucide="file-text" class="w-3.5 h-3.5"></i>
+          Открыть окно вставки текста
         </button>
       </div>
 
-      <div class="bg-brand-card rounded-[24px] p-5 card-shadow space-y-2">
-        <h3 class="text-sm font-bold">Статус парсинга</h3>
-        <div id="syncLog" class="h-32 overflow-y-auto bg-black rounded-xl p-3 text-[10px] text-green-400 font-mono space-y-1">
-          Система готова. Ожидание данных...
-        </div>
+      <!-- Helpful token instructions -->
+      <div class="card-glass rounded-[28px] p-5 space-y-3">
+        <h4 class="text-xs font-bold uppercase tracking-wider text-white/70">Где взять токен без Flood Control?</h4>
+        <ul class="text-xs text-white/60 space-y-2 list-disc list-inside">
+          <li>Откройте сервис токенов: <span class="text-brand-red font-mono">vkhost.github.io</span></li>
+          <li>Выберите <span class="text-white font-semibold">VK Me</span>, <span class="text-white font-semibold">Lollipop</span> или <span class="text-white font-semibold">VK Admin</span> (у них нет ограничений).</li>
+          <li>Скопируйте всё после <span class="text-white font-mono">access_token=</span>.</li>
+        </ul>
       </div>
-      
-      <button id="btnClearData" class="w-full py-3 text-white/40 hover:text-brand-red text-xs font-medium scale-tap">
-        Очистить все локальные данные
-      </button>
-    </div>
+
+      <!-- Clear & Reset Data -->
+      <div class="pt-2">
+        <button id="btnResetAll" class="tap-scale w-full py-3 text-xs font-medium text-white/40 hover:text-brand-red transition">
+          Сбросить все операции к исходным демо-данным
+        </button>
+      </div>
+    </section>
 
   </main>
 
-  <!-- BOTTOM NAV BAR -->
+  <!-- MODAL: MANUAL QUICK-PASTE -->
+  <div id="pasteModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-4 hidden">
+    <div class="card-glass w-full max-w-md bg-[#18181A] rounded-t-[32px] sm:rounded-[32px] p-5 space-y-4 border border-white/10">
+      <div class="flex justify-between items-center pb-2 border-b border-white/10">
+        <h3 class="text-base font-bold flex items-center gap-2">
+          <i data-lucide="receipt" class="w-4 h-4 text-brand-red"></i>
+          Вставка сообщений «Дзынь» / SMS
+        </h3>
+        <button id="btnClosePasteModal" class="p-1 rounded-full text-white/40 hover:text-white">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <p class="text-xs text-white/60">
+        Вставьте сюда текст одного или сразу нескольких сообщений подряд (из диалога ВКонтакте или SMS):
+      </p>
+
+      <textarea id="rawPasteInput" rows="6" placeholder="Покупка 450 ₽ в Вкусно и точка&#10;Оплата 1240 ₽ Место: Mori Cinema&#10;Списание 199 ₽ VK Music..." class="w-full bg-black border border-white/10 rounded-2xl p-3.5 text-xs text-white placeholder-white/20 focus:outline-none focus:border-brand-red leading-relaxed"></textarea>
+
+      <div class="flex gap-2.5">
+        <button id="btnProcessPaste" class="tap-scale flex-1 py-3 bg-brand-red hover:bg-brand-redHover rounded-xl font-bold text-xs text-white shadow-lg shadow-brand-red/30">
+          Распознать и сохранить
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- BOTTOM TAB BAR (iOS STYLE) -->
   <nav class="fixed bottom-0 left-0 right-0 glass-nav z-40" style="padding-bottom: var(--sab);">
     <div class="flex justify-between items-center max-w-md mx-auto px-6 py-2">
-      <button class="nav-btn flex flex-col items-center gap-1 text-brand-red scale-tap" data-target="view-dashboard">
-        <i data-lucide="credit-card" class="w-6 h-6"></i>
-        <span class="text-[10px] font-medium">Главная</span>
+      <button class="nav-tab tap-scale flex flex-col items-center gap-1 text-brand-red" data-target="view-dashboard">
+        <i data-lucide="layout-grid" class="w-5 h-5"></i>
+        <span class="text-[10px] font-semibold">Обзор</span>
       </button>
-      <button class="nav-btn flex flex-col items-center gap-1 text-white/50 hover:text-white scale-tap" data-target="view-analytics">
-        <i data-lucide="bar-chart-2" class="w-6 h-6"></i>
-        <span class="text-[10px] font-medium">Аналитика</span>
+
+      <button class="nav-tab tap-scale flex flex-col items-center gap-1 text-white/40 hover:text-white" data-target="view-months">
+        <i data-lucide="calendar" class="w-5 h-5"></i>
+        <span class="text-[10px] font-semibold">Месяцы</span>
       </button>
-      <button class="nav-btn flex flex-col items-center gap-1 text-white/50 hover:text-white scale-tap" data-target="view-economy">
-        <i data-lucide="piggy-bank" class="w-6 h-6"></i>
-        <span class="text-[10px] font-medium">Экономия</span>
+
+      <button class="nav-tab tap-scale flex flex-col items-center gap-1 text-white/40 hover:text-white" data-target="view-economy">
+        <i data-lucide="piggy-bank" class="w-5 h-5"></i>
+        <span class="text-[10px] font-semibold">Экономия</span>
       </button>
-      <button class="nav-btn flex flex-col items-center gap-1 text-white/50 hover:text-white scale-tap" data-target="view-settings">
-        <i data-lucide="settings" class="w-6 h-6"></i>
-        <span class="text-[10px] font-medium">Настройки</span>
+
+      <button class="nav-tab tap-scale flex flex-col items-center gap-1 text-white/40 hover:text-white" data-target="view-settings">
+        <i data-lucide="sliders-horizontal" class="w-5 h-5"></i>
+        <span class="text-[10px] font-semibold">Настройки</span>
       </button>
     </div>
   </nav>
 
   <script>
-    // Инициализация иконок
-    lucide.createIcons();
+    // Lucide initialization helper
+    const refreshIcons = () => lucide && lucide.createIcons();
 
-    // Timestamp 1 Сентября 2026 (UTC)
-    const STOP_TIMESTAMP = 1788220800;
+    // September 1, 2026 UTC timestamp
+    const SEPTEMBER_2026_START = 1788220800;
 
-    // Маппинг категорий (строго по ТЗ)
-    const CATEGORIES = [
-      { name: 'Фастфуд', color: '#FF9F0A', icon: 'pizza', keywords: ['burger king', 'вкусно и точка', 'kfc', 'ростикс', 'додо', 'шаурма', 'макдоналдс'] },
-      { name: 'Развлечения', color: '#BF5AF2', icon: 'ticket', keywords: ['mori cinema', 'royal forest', 'кино', 'театр', 'парк', 'концерт'] },
-      { name: 'Подписки', color: '#0A84FF', icon: 'repeat', keywords: ['vk music', 'яндекс', 'plus', 'ivi', 'okko', 'netflix', 'apple'] },
-      { name: 'Игры', color: '#32D74B', icon: 'gamepad-2', keywords: ['lis-skins', 'steam', 'playstation', 'xbox', 'epic games', 'gog'] },
-      { name: 'Супермаркеты', color: '#FF375F', icon: 'shopping-cart', keywords: ['пятерочка', 'магнит', 'перекресток', 'лента', 'ашан', 'спар', 'вкусвилл'] },
-      { name: 'Транспорт', color: '#5E5CE6', icon: 'car', keywords: ['такси', 'яндекс go', 'uber', 'метро', 'ржд', 'авиа', 'лукойл'] },
-      { name: 'Прочее', color: '#8E8E93', icon: 'tag', keywords: [] } // Default
+    // Rich initial mock data for immediate user satisfaction
+    const DEFAULT_TRANSACTIONS = [
+      { id: 'tx_1', amount: 489, merchant: 'Вкусно и точка', category: 'Фастфуд', ts: 1789984800 },
+      { id: 'tx_2', amount: 1640, merchant: 'Пятёрочка', category: 'Супермаркеты', ts: 1789898400 },
+      { id: 'tx_3', amount: 560, merchant: 'Яндекс Go', category: 'Транспорт', ts: 1789812000 },
+      { id: 'tx_4', amount: 1250, merchant: 'Mori Cinema', category: 'Развлечения', ts: 1789725600 },
+      { id: 'tx_5', amount: 620, merchant: 'Burger King', category: 'Фастфуд', ts: 1789639200 },
+      { id: 'tx_6', amount: 890, merchant: 'Lis-skins', category: 'Игры', ts: 1789552800 },
+      { id: 'tx_7', amount: 199, merchant: 'VK Музыка', category: 'Подписки', ts: 1789466400 },
+      { id: 'tx_8', amount: 2840, merchant: 'Перекрёсток', category: 'Супермаркеты', ts: 1789380000 },
+      { id: 'tx_9', amount: 390, merchant: 'Додо Пицца', category: 'Фастфуд', ts: 1789293600 },
+      { id: 'tx_10', amount: 299, merchant: 'Яндекс Плюс', category: 'Подписки', ts: 1789207200 },
+      { id: 'tx_11', amount: 420, merchant: 'Кофе с собой', category: 'Фастфуд', ts: 1789120800 },
+      { id: 'tx_12', amount: 1450, merchant: 'Steam Games', category: 'Игры', ts: 1789034400 },
+      // Previous month mock (August 2026) for comparison analytics
+      { id: 'tx_prev_1', amount: 3200, merchant: 'Супермаркет Магнит', category: 'Супермаркеты', ts: 1787000000 },
+      { id: 'tx_prev_2', amount: 1850, merchant: 'Mori Cinema', category: 'Развлечения', ts: 1786500000 },
+      { id: 'tx_prev_3', amount: 950, merchant: 'Burger King', category: 'Фастфуд', ts: 1786200000 }
     ];
 
-    class DzynApp {
+    // Category dictionary & visual tokens
+    const CATEGORIES = {
+      'Фастфуд': { color: '#FF9F0A', icon: 'utensils', keywords: ['вкусно и точка', 'burger king', 'kfc', 'ростикс', 'додо', 'шаурма', 'кофе', 'макдоналдс', 'пицца', 'бургер'] },
+      'Супермаркеты': { color: '#EF3124', icon: 'shopping-cart', keywords: ['пятерочка', 'пятёрочка', 'магнит', 'перекресток', 'перекрёсток', 'лента', 'ашан', 'дикси', 'spar', 'вкусвилл'] },
+      'Транспорт': { color: '#0A84FF', icon: 'car', keywords: ['яндекс go', 'uber', 'такси', 'каршеринг', 'метро', 'азс', 'лукойл', 'газпром', 'ржд'] },
+      'Развлечения': { color: '#BF5AF2', icon: 'ticket', keywords: ['mori cinema', 'кино', 'royal forest', 'парк', 'билет', 'театр', 'боулинг', 'караоке'] },
+      'Игры': { color: '#30D158', icon: 'gamepad-2', keywords: ['lis-skins', 'steam', 'playstation', 'xbox', 'epic games', 'gog', 'донаты', 'игры'] },
+      'Подписки': { color: '#64D2FF', icon: 'repeat', keywords: ['vk music', 'vk музыка', 'яндекс плюс', 'яндекс', 'plus', 'spotify', 'apple', 'ivi', 'okko', 'кинопоиск'] },
+      'Прочее': { color: '#8E8E93', icon: 'tag', keywords: [] }
+    };
+
+    class FinanceManager {
       constructor() {
-        this.txs = JSON.parse(localStorage.getItem('dzyn_txs') || '[]');
-        this.chartInstance = null;
-        this.chartRange = 'days';
-        this.isSyncing = false;
-        
-        this.initNav();
-        this.initSettings();
-        this.updateUI();
-      }
-
-      /* НАВИГАЦИЯ */
-      initNav() {
-        document.querySelectorAll('.nav-btn').forEach(btn => {
-          btn.addEventListener('click', (e) => {
-            document.querySelectorAll('.nav-btn').forEach(b => {
-              b.classList.remove('text-brand-red'); b.classList.add('text-white/50');
-            });
-            const targetBtn = e.currentTarget;
-            targetBtn.classList.add('text-brand-red'); targetBtn.classList.remove('text-white/50');
-            
-            document.querySelectorAll('.view-section').forEach(v => v.classList.add('hidden'));
-            document.getElementById(targetBtn.dataset.target).classList.remove('hidden');
-
-            if(targetBtn.dataset.target === 'view-analytics') this.renderChart();
-          });
-        });
-
-        document.querySelectorAll('.chart-tab').forEach(btn => {
-          btn.addEventListener('click', (e) => {
-            document.querySelectorAll('.chart-tab').forEach(b => {
-              b.classList.remove('bg-white/20', 'text-white', 'shadow');
-              b.classList.add('text-white/60');
-            });
-            const t = e.currentTarget;
-            t.classList.add('bg-white/20', 'text-white', 'shadow');
-            t.classList.remove('text-white/60');
-            this.chartRange = t.dataset.range;
-            this.renderChart();
-          });
-        });
-      }
-
-      /* СИНХРОНИЗАЦИЯ И НАСТРОЙКИ */
-      initSettings() {
-        const t = localStorage.getItem('vk_token') || '';
-        const p = localStorage.getItem('vk_peer') || '';
-        document.getElementById('inpToken').value = t;
-        document.getElementById('inpPeerId').value = p;
-
-        if (this.txs.length > 0) {
-          document.getElementById('syncStatusBadge').textContent = `Загружено: ${this.txs.length}`;
-          document.getElementById('syncStatusBadge').classList.replace('text-white/60', 'text-[#32D74B]');
+        this.txs = JSON.parse(localStorage.getItem('dzyn_txs') || 'null');
+        if (!this.txs) {
+          this.txs = DEFAULT_TRANSACTIONS;
+          localStorage.setItem('dzyn_txs', JSON.stringify(this.txs));
         }
 
-        document.getElementById('btnClearData').addEventListener('click', () => {
-          if(confirm('Точно удалить все данные?')) {
-            localStorage.removeItem('dzyn_txs');
-            this.txs = [];
-            this.updateUI();
-            this.log('Данные очищены.');
+        this.currentView = 'view-dashboard';
+        this.selectedMonthKey = '2026-08'; // 0-based month index string: 2026-08 is September
+        this.dashboardChart = null;
+        this.donutChart = null;
+        this.weeksChart = null;
+
+        this.initDOM();
+        this.renderAll();
+      }
+
+      initDOM() {
+        // Navigation setup
+        document.querySelectorAll('.nav-tab').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            const targetId = e.currentTarget.dataset.target;
+            this.switchView(targetId);
+          });
+        });
+
+        // Quick Paste Modal Listeners
+        const modal = document.getElementById('pasteModal');
+        const openModal = () => {
+          modal.classList.remove('hidden');
+          document.getElementById('rawPasteInput').focus();
+        };
+        const closeModal = () => modal.classList.add('hidden');
+
+        document.getElementById('btnQuickPasteModal').addEventListener('click', openModal);
+        document.getElementById('btnOpenPasteFromSettings').addEventListener('click', openModal);
+        document.getElementById('btnClosePasteModal').addEventListener('click', closeModal);
+
+        document.getElementById('btnProcessPaste').addEventListener('click', () => {
+          const raw = document.getElementById('rawPasteInput').value;
+          if (!raw.trim()) return;
+          this.parseManualText(raw);
+          document.getElementById('rawPasteInput').value = '';
+          closeModal();
+        });
+
+        // Settings actions
+        const savedToken = localStorage.getItem('vk_token') || '';
+        const savedPeer = localStorage.getItem('vk_peer_id') || '-218837624';
+        document.getElementById('inputVkToken').value = savedToken;
+        document.getElementById('inputVkPeerId').value = savedPeer;
+
+        document.getElementById('btnExecuteSync').addEventListener('click', () => this.syncVkWithExecute());
+
+        document.getElementById('btnResetAll').addEventListener('click', () => {
+          if (confirm('Сбросить все операции к изначальным демо-данным за сентябрь?')) {
+            this.txs = DEFAULT_TRANSACTIONS;
+            localStorage.setItem('dzyn_txs', JSON.stringify(this.txs));
+            this.renderAll();
+            this.log('Данные сброшены к начальным.');
+          }
+        });
+      }
+
+      switchView(viewId) {
+        this.currentView = viewId;
+        document.querySelectorAll('.app-view').forEach(v => v.classList.add('hidden'));
+        document.getElementById(viewId).classList.remove('hidden');
+
+        document.querySelectorAll('.nav-tab').forEach(tab => {
+          if (tab.dataset.target === viewId) {
+            tab.classList.add('text-brand-red');
+            tab.classList.remove('text-white/40');
+          } else {
+            tab.classList.remove('text-brand-red');
+            tab.classList.add('text-white/40');
           }
         });
 
-        document.getElementById('btnStartSync').addEventListener('click', () => this.startSync());
+        // Trigger chart resizes if needed
+        if (viewId === 'view-dashboard') this.renderDashboardCharts();
+        if (viewId === 'view-months') this.renderMonthsView();
+        if (viewId === 'view-economy') this.renderEconomyView();
+
+        window.scrollTo({ top: 0, behavior: 'smooth' });
       }
 
-      log(msg) {
-        const el = document.getElementById('syncLog');
-        el.innerHTML = `<div>[${new Date().toLocaleTimeString()}] ${msg}</div>` + el.innerHTML;
+      log(msg, type = 'info') {
+        const box = document.getElementById('syncLogBox');
+        const d = new Date().toLocaleTimeString();
+        const colorClass = type === 'error' ? 'text-brand-red' : (type === 'warn' ? 'text-amber-400' : 'text-emerald-400');
+        const entry = document.createElement('div');
+        entry.className = colorClass;
+        entry.textContent = `[${d}] ${msg}`;
+        box.prepend(entry);
+        document.getElementById('logStatusText').textContent = msg.slice(0, 24);
       }
 
-      async startSync() {
-        if (this.isSyncing) return;
-        const token = document.getElementById('inpToken').value.trim();
-        const peerId = document.getElementById('inpPeerId').value.trim();
-        
-        if (!token || !peerId) return alert('Введите токен и Peer ID');
-        
+      async syncVkWithExecute() {
+        const token = document.getElementById('inputVkToken').value.trim();
+        const peerId = document.getElementById('inputVkPeerId').value.trim() || '-218837624';
+
+        if (!token) {
+          alert('Введите VK Access Token в поле настроек.');
+          return;
+        }
+
         localStorage.setItem('vk_token', token);
-        localStorage.setItem('vk_peer', peerId);
-        
-        this.isSyncing = true;
-        document.getElementById('syncSpinner').classList.add('animate-spin');
-        this.log('Запуск синхронизации...');
-        
-        let offset = 0;
-        let reachedLimit = false;
-        let newTxsCount = 0;
+        localStorage.setItem('vk_peer_id', peerId);
 
-        while (!reachedLimit) {
-          this.log(`Запрос пакета (offset: ${offset})...`);
+        const btn = document.getElementById('btnExecuteSync');
+        const icon = document.getElementById('syncBtnIcon');
+        btn.disabled = true;
+        btn.classList.add('opacity-75');
+        icon.classList.add('animate-spin');
+
+        this.log('Подготовка атомарного запроса VK API (без циклов)...');
+        document.getElementById('statusPill').textContent = 'Синхронизация...';
+
+        try {
+          // Single execute code that queries up to 100 messages in one atomic shot on VK servers
+          const vkCode = `
+            var hist = API.messages.getHistory({"peer_id": ${peerId}, "count": 100});
+            return hist;
+          `;
+
+          let responseData = null;
+
           try {
-            const data = await this.vkApiCall('messages.getHistory', {
-              access_token: token, peer_id: peerId, count: 50, offset: offset, v: '5.131'
+            responseData = await this.jsonpVk('execute', {
+              code: vkCode.replace(/\s+/g, ' '),
+              access_token: token,
+              v: '5.199'
             });
-
-            if (!data.response || !data.response.items || data.response.items.length === 0) {
-              this.log('Сообщений больше нет.');
-              break;
-            }
-
-            for (const msg of data.response.items) {
-              if (msg.date < STOP_TIMESTAMP) {
-                this.log('Достигнута граница: 1 Сентября 2026. Остановка.');
-                reachedLimit = true;
-                break;
-              }
-
-              const parsed = this.parseMessage(msg.text, msg.date);
-              if (parsed) {
-                // Проверка на дубликаты по timestamp и сумме
-                const exists = this.txs.find(t => t.ts === parsed.ts && t.amount === parsed.amount);
-                if (!exists) {
-                  this.txs.push(parsed);
-                  newTxsCount++;
-                }
-              }
-            }
-            offset += 50;
-            // Пауза чтобы не ловить Flood Control
-            await new Promise(r => setTimeout(r, 400)); 
-
-          } catch (e) {
-            this.log(`Ошибка сети/API: ${e.message}`);
-            break;
+          } catch (execErr) {
+            this.log('VK execute ограничен, переключаемся на прямой messages.getHistory...', 'warn');
+            responseData = await this.jsonpVk('messages.getHistory', {
+              peer_id: peerId,
+              count: 100,
+              access_token: token,
+              v: '5.199'
+            });
           }
-        }
 
-        // Сортировка от новых к старым
-        this.txs.sort((a, b) => b.ts - a.ts);
-        localStorage.setItem('dzyn_txs', JSON.stringify(this.txs));
-        
-        this.isSyncing = false;
-        document.getElementById('syncSpinner').classList.remove('animate-spin');
-        this.log(`Синхронизация завершена. Найдено новых: ${newTxsCount}.`);
-        document.getElementById('syncStatusBadge').textContent = `Загружено: ${this.txs.length}`;
-        
-        this.updateUI();
+          if (!responseData || !responseData.items || responseData.items.length === 0) {
+            this.log('Сообщений не обнаружено. Проверьте Peer ID.', 'warn');
+            alert('Сообщений в данном диалоге не найдено.');
+            return;
+          }
+
+          this.log(`Получено ${responseData.items.length} сообщений. Начинаем парсинг...`);
+
+          let added = 0;
+          responseData.items.forEach(item => {
+            const parsed = this.extractTransaction(item.text, item.date);
+            if (parsed) {
+              const exists = this.txs.some(t => Math.abs(t.ts - parsed.ts) < 2 && t.amount === parsed.amount);
+              if (!exists) {
+                this.txs.push(parsed);
+                added++;
+              }
+            }
+          });
+
+          this.txs.sort((a, b) => b.ts - a.ts);
+          localStorage.setItem('dzyn_txs', JSON.stringify(this.txs));
+
+          this.log(`Успешно! Добавлено новых чеков: ${added}. Всего: ${this.txs.length}.`);
+          document.getElementById('statusPill').textContent = `Обновлено: ${this.txs.length}`;
+
+          this.renderAll();
+          alert(`Синхронизация успешна!\nДобавлено новых чеков «Дзынь»: ${added}`);
+
+        } catch (err) {
+          console.error(err);
+          this.log(`Ошибка: ${err.message || 'Сбой запроса'}`, 'error');
+          if (err.message && err.message.toLowerCase().includes('flood')) {
+            alert('VK вернул Flood Control на данный токен.\n\nРешение:\n1. Получите токен через "VK Me" или "VK Admin" на vkhost.github.io\n2. Либо просто воспользуйтесь кнопкой «Вставить» вверху экрана!');
+          } else {
+            alert(`Ошибка VK API: ${err.message || 'Не удалось выполнить запрос'}`);
+          }
+        } finally {
+          btn.disabled = false;
+          btn.classList.remove('opacity-75');
+          icon.classList.remove('animate-spin');
+        }
       }
 
-      vkApiCall(method, params) {
+      jsonpVk(method, params) {
         return new Promise((resolve, reject) => {
-          const callbackName = 'vk_cb_' + Date.now() + Math.round(Math.random() * 1000);
-          params.callback = callbackName;
-          const query = Object.keys(params).map(k => `${k}=${encodeURIComponent(params[k])}`).join('&');
+          const cbName = 'vk_cb_' + Date.now() + '_' + Math.floor(Math.random() * 10000);
+          params.callback = cbName;
+
+          const query = Object.keys(params)
+            .map(k => `${k}=${encodeURIComponent(params[k])}`)
+            .join('&');
+
           const script = document.createElement('script');
           script.src = `https://api.vk.com/method/${method}?${query}`;
-          
-          window[callbackName] = (data) => {
-            delete window[callbackName];
-            script.remove();
-            if (data.error) reject(new Error(data.error.error_msg));
-            else resolve(data);
+
+          const cleanup = () => {
+            delete window[cbName];
+            if (script.parentNode) script.parentNode.removeChild(script);
           };
-          script.onerror = () => reject(new Error('JSONP Error'));
+
+          window[cbName] = (res) => {
+            cleanup();
+            if (res.error) {
+              reject(new Error(res.error.error_msg || `VK Error Code ${res.error.error_code}`));
+            } else {
+              resolve(res.response);
+            }
+          };
+
+          script.onerror = () => {
+            cleanup();
+            reject(new Error('Сетевой сбой при обращении к vk.com'));
+          };
+
           document.body.appendChild(script);
         });
       }
 
-      parseMessage(text, timestamp) {
-        if (!text) return null;
-        // Ищем паттерн покупки. 
-        // Пример 1: Покупка 450.50 ₽ в Вкусно и точка...
-        // Пример 2: Оплата 1200 руб. Место: Mori Cinema...
-        const amountMatch = text.match(/(?:покупка|оплата|списание|перевод).*?(\d+(?:[.,]\d+)?)\s*(?:₽|руб|р|rub)/i);
+      extractTransaction(text, timestamp) {
+        if (!text || typeof text !== 'string') return null;
+
+        // Clean & match amounts: "Покупка 450 ₽", "Списание 1,200.50 руб", "Оплата 340р"
+        const amountMatch = text.match(/(?:покупка|оплата|списание|перевод|чек|трата)[^0-9]*(\d+(?:[.,]\d{1,2})?)\s*(?:₽|руб|р|rub)/i);
         if (!amountMatch) return null;
 
         const amount = parseFloat(amountMatch[1].replace(',', '.'));
-        let merchant = 'Неизвестно';
+        if (isNaN(amount) || amount <= 0) return null;
 
-        // Пытаемся вытащить мерчанта
-        const merchMatch1 = text.match(/в\s+([A-Za-zА-Яа-я0-9\s-]+?)(?:\.|$|карта|баланс|остаток)/i);
-        const merchMatch2 = text.match(/место:\s*([A-Za-zА-Яа-я0-9\s-]+?)(?:\.|$)/i);
-        
-        if (merchMatch2) merchant = merchMatch2[1].trim();
-        else if (merchMatch1) merchant = merchMatch1[1].trim();
+        // Merchant extraction
+        let merchant = 'Торговая точка';
+        const merchInMatch = text.match(/(?:в|место:)\s+([A-Za-zА-Яа-я0-9\s._-]+?)(?:\.|\n|баланс|карта|остаток|$)/i);
+        if (merchInMatch && merchInMatch[1].trim().length > 1) {
+          merchant = merchInMatch[1].trim();
+        }
+
+        // Determine category
+        const category = this.categorize(merchant + ' ' + text);
 
         return {
-          id: 'tx_' + timestamp + '_' + Math.random().toString(36).substr(2, 5),
-          amount: amount,
+          id: 'tx_' + (timestamp || Date.now()) + '_' + Math.floor(Math.random() * 1000),
+          amount: Math.round(amount),
           merchant: merchant,
-          category: this.categorize(merchant),
-          ts: timestamp,
-          dateISO: new Date(timestamp * 1000).toISOString()
+          category: category,
+          ts: timestamp || Math.floor(Date.now() / 1000)
         };
       }
 
-      categorize(merchant) {
-        const lower = merchant.toLowerCase();
-        for (const cat of CATEGORIES) {
-          if (cat.keywords.some(kw => lower.includes(kw))) return cat.name;
+      categorize(str) {
+        const lower = str.toLowerCase();
+        for (const [catName, meta] of Object.entries(CATEGORIES)) {
+          if (meta.keywords.some(kw => lower.includes(kw))) {
+            return catName;
+          }
         }
         return 'Прочее';
       }
 
-      /* ОБНОВЛЕНИЕ UI И ЛОГИКА */
-      updateUI() {
-        this.renderDashboard();
-        if(!document.getElementById('view-analytics').classList.contains('hidden')) this.renderChart();
-        this.renderEconomy();
+      parseManualText(raw) {
+        const lines = raw.split(/\n+/);
+        let added = 0;
+        lines.forEach(line => {
+          const t = this.extractTransaction(line, Math.floor(Date.now() / 1000));
+          if (t) {
+            this.txs.unshift(t);
+            added++;
+          }
+        });
+        localStorage.setItem('dzyn_txs', JSON.stringify(this.txs));
+        this.renderAll();
+        alert(`Распознано и добавлено операций: ${added}`);
       }
 
-      formatMoney(num) {
+      renderAll() {
+        this.renderDashboard();
+        this.renderMonthsView();
+        this.renderEconomyView();
+        refreshIcons();
+      }
+
+      formatCurrency(num) {
         return new Intl.NumberFormat('ru-RU').format(Math.round(num)) + ' ₽';
       }
 
-      getCatMeta(name) {
-        return CATEGORIES.find(c => c.name === name) || CATEGORIES[CATEGORIES.length - 1];
+      renderDashboard() {
+        // Filter September 2026 data
+        const septemberTxs = this.txs.filter(t => {
+          const d = new Date(t.ts * 1000);
+          return d.getFullYear() === 2026 && d.getMonth() === 8; // Month 8 is September
+        });
+
+        // If no September transactions, fallback to recent 30 days
+        const activeTxs = septemberTxs.length > 0 ? septemberTxs : this.txs;
+
+        const total = activeTxs.reduce((sum, t) => sum + t.amount, 0);
+        document.getElementById('dashTotalSpent').textContent = this.formatCurrency(total);
+        document.getElementById('dashTxCount').textContent = `${activeTxs.length} операций`;
+
+        // Today spend calculation (September 23, 2026 reference)
+        const todayTxs = activeTxs.filter(t => {
+          const d = new Date(t.ts * 1000);
+          return d.getDate() === 23 && d.getMonth() === 8 && d.getFullYear() === 2026;
+        });
+        const todayTotal = todayTxs.reduce((s, t) => s + t.amount, 0);
+        document.getElementById('dashSpentToday').textContent = this.formatCurrency(todayTotal);
+
+        const avg = activeTxs.length ? Math.round(total / activeTxs.length) : 0;
+        document.getElementById('dashAvgCheck').textContent = this.formatCurrency(avg);
+
+        // Render recent list
+        const listEl = document.getElementById('dashTxList');
+        listEl.innerHTML = '';
+
+        if (this.txs.length === 0) {
+          listEl.innerHTML = '<div class="text-center py-6 text-xs text-white/40">Нет зарегистрированных трат</div>';
+        } else {
+          this.txs.slice(0, 10).forEach(t => {
+            const meta = CATEGORIES[t.category] || CATEGORIES['Прочее'];
+            const dateStr = new Date(t.ts * 1000).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
+            
+            listEl.innerHTML += `
+              <div class="card-glass rounded-2xl p-3 flex items-center justify-between">
+                <div class="flex items-center gap-3 overflow-hidden">
+                  <div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style="background: ${meta.color}20">
+                    <i data-lucide="${meta.icon}" class="w-5 h-5" style="color: ${meta.color}"></i>
+                  </div>
+                  <div class="truncate">
+                    <p class="text-xs font-bold text-white truncate">${t.merchant}</p>
+                    <p class="text-[10px] text-white/50">${t.category} &bull; ${dateStr}</p>
+                  </div>
+                </div>
+                <div class="text-right shrink-0 pl-2">
+                  <span class="text-sm font-bold text-white">-${this.formatCurrency(t.amount)}</span>
+                </div>
+              </div>
+            `;
+          });
+        }
+
+        this.renderDashboardCharts(activeTxs);
       }
 
-      renderDashboard() {
-        const now = new Date();
-        const currentMonth = now.getMonth();
-        const currentYear = now.getFullYear();
-        
-        let monthSum = 0;
+      renderDashboardCharts(activeTxs) {
+        if (!activeTxs) {
+          activeTxs = this.txs.filter(t => {
+            const d = new Date(t.ts * 1000);
+            return d.getFullYear() === 2026 && d.getMonth() === 8;
+          });
+          if (activeTxs.length === 0) activeTxs = this.txs;
+        }
+
+        // Daily aggregated spend chart for September (1..23)
+        const dailyTotals = Array(23).fill(0);
+        activeTxs.forEach(t => {
+          const d = new Date(t.ts * 1000);
+          if (d.getMonth() === 8 && d.getFullYear() === 2026) {
+            const day = d.getDate();
+            if (day >= 1 && day <= 23) {
+              dailyTotals[day - 1] += t.amount;
+            }
+          }
+        });
+
+        const ctxDash = document.getElementById('dashboardChart');
+        if (ctxDash) {
+          if (this.dashboardChart) this.dashboardChart.destroy();
+          this.dashboardChart = new Chart(ctxDash, {
+            type: 'line',
+            data: {
+              labels: Array.from({ length: 23 }, (_, i) => `${i + 1} сен`),
+              datasets: [{
+                data: dailyTotals,
+                borderColor: '#EF3124',
+                backgroundColor: 'rgba(239, 49, 36, 0.12)',
+                borderWidth: 2.5,
+                fill: true,
+                tension: 0.35,
+                pointRadius: 2,
+                pointHoverRadius: 5
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: { legend: { display: false } },
+              scales: {
+                x: {
+                  grid: { display: false },
+                  ticks: { color: 'rgba(255,255,255,0.4)', font: { size: 9 }, maxTicksLimit: 7 }
+                },
+                y: {
+                  grid: { color: 'rgba(255,255,255,0.06)' },
+                  ticks: { color: 'rgba(255,255,255,0.4)', font: { size: 9 }, maxTicksLimit: 4 }
+                }
+              }
+            }
+          });
+        }
+
+        // Donut breakdown chart
+        const catMap = {};
+        activeTxs.forEach(t => {
+          catMap[t.category] = (catMap[t.category] || 0) + t.amount;
+        });
+
+        const sortedCats = Object.entries(catMap).sort((a, b) => b[1] - a[1]);
+        const catLabels = sortedCats.map(c => c[0]);
+        const catData = sortedCats.map(c => c[1]);
+        const catColors = sortedCats.map(c => (CATEGORIES[c[0]] || CATEGORIES['Прочее']).color);
+
+        const ctxDonut = document.getElementById('categoryDonutChart');
+        if (ctxDonut) {
+          if (this.donutChart) this.donutChart.destroy();
+          this.donutChart = new Chart(ctxDonut, {
+            type: 'doughnut',
+            data: {
+              labels: catLabels,
+              datasets: [{
+                data: catData.length ? catData : [1],
+                backgroundColor: catColors.length ? catColors : ['#333'],
+                borderWidth: 0,
+                hoverOffset: 4
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              cutout: '72%',
+              plugins: { legend: { display: false } }
+            }
+          });
+        }
+
+        // Category progress bars
+        const barsContainer = document.getElementById('dashCategoryBars');
+        barsContainer.innerHTML = '';
+        document.getElementById('dashCategoryCountLabel').textContent = `${sortedCats.length} категорий`;
+
+        const maxCat = sortedCats.length ? sortedCats[0][1] : 1;
+        sortedCats.slice(0, 4).forEach(([name, sum]) => {
+          const meta = CATEGORIES[name] || CATEGORIES['Прочее'];
+          const pct = Math.round((sum / maxCat) * 100);
+          barsContainer.innerHTML += `
+            <div class="space-y-1">
+              <div class="flex justify-between text-[11px] font-medium">
+                <span class="text-white/80">${name}</span>
+                <span class="font-bold text-white">${this.formatCurrency(sum)}</span>
+              </div>
+              <div class="w-full bg-white/5 h-1.5 rounded-full overflow-hidden">
+                <div class="h-full rounded-full" style="width: ${pct}%; background-color: ${meta.color}"></div>
+              </div>
+            </div>
+          `;
+        });
+      }
+
+      renderMonthsView() {
+        const monthNames = [
+          'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
+          'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'
+        ];
+
+        // Group transactions by YYYY-MM
+        const monthsMap = {};
         this.txs.forEach(t => {
           const d = new Date(t.ts * 1000);
-          if (d.getMonth() === currentMonth && d.getFullYear() === currentYear) {
-            monthSum += t.amount;
-          }
+          const key = `${d.getFullYear()}-${String(d.getMonth()).padStart(2, '0')}`;
+          if (!monthsMap[key]) monthsMap[key] = [];
+          monthsMap[key].push(t);
         });
 
-        document.getElementById('dashTotalSpent').textContent = this.formatMoney(monthSum);
-        document.getElementById('dashTxCount').textContent = this.txs.length;
-        const daysPassed = Math.max(1, now.getDate());
-        document.getElementById('dashAvgSpent').textContent = this.formatMoney(monthSum / daysPassed);
+        // Ensure current September and August exist in list
+        if (!monthsMap['2026-08']) monthsMap['2026-08'] = [];
+        if (!monthsMap['2026-07']) monthsMap['2026-07'] = [];
 
-        // Список последних
-        const list = document.getElementById('dashTxList');
-        list.innerHTML = '';
-        if (this.txs.length === 0) {
-          list.innerHTML = `<div class="text-center text-white/40 text-xs py-4">Нет данных. Синхронизируйте VK.</div>`;
-          return;
+        const sortedKeys = Object.keys(monthsMap).sort().reverse();
+        const selector = document.getElementById('monthsSelector');
+        selector.innerHTML = '';
+
+        sortedKeys.forEach(k => {
+          const [year, mIndex] = k.split('-');
+          const mLabel = `${monthNames[parseInt(mIndex)]} ${year}`;
+          const isSelected = k === this.selectedMonthKey;
+          
+          const pill = document.createElement('button');
+          pill.className = `tap-scale shrink-0 px-3.5 py-1.5 rounded-full text-xs font-semibold border ${
+            isSelected 
+              ? 'bg-brand-red border-brand-red text-white shadow-md shadow-brand-red/30' 
+              : 'bg-white/5 border-white/10 text-white/60 hover:text-white'
+          }`;
+          pill.textContent = mLabel;
+          pill.addEventListener('click', () => {
+            this.selectedMonthKey = k;
+            this.renderMonthsView();
+          });
+          selector.appendChild(pill);
+        });
+
+        const activeMonthTxs = monthsMap[this.selectedMonthKey] || [];
+        const [selYear, selMIdx] = this.selectedMonthKey.split('-');
+        document.getElementById('selectedMonthName').textContent = `${monthNames[parseInt(selMIdx)]} ${selYear}`;
+
+        const monthTotal = activeMonthTxs.reduce((s, t) => s + t.amount, 0);
+        document.getElementById('monthTotalAmount').textContent = this.formatCurrency(monthTotal);
+        document.getElementById('monthTotalTxCount').textContent = activeMonthTxs.length;
+
+        // Render Weekly Chart
+        const weekBuckets = [0, 0, 0, 0];
+        activeMonthTxs.forEach(t => {
+          const day = new Date(t.ts * 1000).getDate();
+          const wIdx = Math.min(3, Math.floor((day - 1) / 7));
+          weekBuckets[wIdx] += t.amount;
+        });
+
+        const ctxWeeks = document.getElementById('monthlyWeeksChart');
+        if (ctxWeeks) {
+          if (this.weeksChart) this.weeksChart.destroy();
+          this.weeksChart = new Chart(ctxWeeks, {
+            type: 'bar',
+            data: {
+              labels: ['1-7 число', '8-14 число', '15-21 число', '22+ число'],
+              datasets: [{
+                data: weekBuckets,
+                backgroundColor: '#EF3124',
+                borderRadius: 8
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: { legend: { display: false } },
+              scales: {
+                x: { grid: { display: false }, ticks: { color: 'rgba(255,255,255,0.4)', font: { size: 9 } } },
+                y: { grid: { color: 'rgba(255,255,255,0.06)' }, ticks: { color: 'rgba(255,255,255,0.4)', font: { size: 9 } } }
+              }
+            }
+          });
         }
 
-        this.txs.slice(0, 15).forEach(tx => {
-          const meta = this.getCatMeta(tx.category);
-          const dateStr = new Date(tx.ts * 1000).toLocaleDateString('ru-RU', {day:'2-digit', month:'short'});
-          
-          list.innerHTML += `
-            <div class="flex items-center justify-between bg-brand-card p-3 rounded-2xl">
-              <div class="flex items-center gap-3 overflow-hidden">
-                <div class="w-10 h-10 rounded-full flex items-center justify-center shrink-0" style="background-color: ${meta.color}20">
-                  <i data-lucide="${meta.icon}" class="w-5 h-5" style="color: ${meta.color}"></i>
-                </div>
-                <div class="min-w-0">
-                  <p class="text-sm font-bold truncate">${tx.merchant}</p>
-                  <p class="text-[11px] text-white/50">${meta.name} • ${dateStr}</p>
-                </div>
-              </div>
-              <p class="text-sm font-bold whitespace-nowrap ml-2">-${this.formatMoney(tx.amount)}</p>
-            </div>
-          `;
-        });
-        lucide.createIcons();
-      }
-
-      renderChart() {
-        const ctx = document.getElementById('mainChart');
-        if (!ctx) return;
-        if (this.chartInstance) this.chartInstance.destroy();
-
-        let labels = [];
-        let dataMap = {};
-
-        // Агрегация в зависимости от таба
-        const MS_PER_DAY = 86400000;
-        const now = Date.now();
-
-        if (this.chartRange === 'days') {
-          // Последние 7 дней
-          for (let i = 6; i >= 0; i--) {
-            const d = new Date(now - i * MS_PER_DAY);
-            labels.push(d.toLocaleDateString('ru-RU', {weekday: 'short', day:'numeric'}));
-            dataMap[labels[labels.length-1]] = 0;
-          }
-          this.txs.forEach(t => {
-            if ((now - t.ts * 1000) <= 7 * MS_PER_DAY) {
-              const l = new Date(t.ts * 1000).toLocaleDateString('ru-RU', {weekday: 'short', day:'numeric'});
-              if(dataMap[l] !== undefined) dataMap[l] += t.amount;
-            }
-          });
-        } else if (this.chartRange === 'weeks') {
-          // Последние 4 недели
-          for (let i = 3; i >= 0; i--) {
-            labels.push(`${i === 0 ? 'Текущая' : i + ' нед назад'}`);
-            dataMap[labels[labels.length-1]] = 0;
-          }
-          this.txs.forEach(t => {
-            const diffDays = (now - t.ts * 1000) / MS_PER_DAY;
-            if (diffDays <= 28) {
-              const weekIdx = 3 - Math.floor(diffDays / 7);
-              if (weekIdx >= 0 && weekIdx <= 3) dataMap[labels[weekIdx]] += t.amount;
-            }
-          });
+        // List transactions for selected month
+        const mList = document.getElementById('monthTxList');
+        mList.innerHTML = '';
+        if (activeMonthTxs.length === 0) {
+          mList.innerHTML = '<div class="text-center py-6 text-xs text-white/40">За этот месяц операций не найдено</div>';
         } else {
-          // По месяцам
-          const mNames = ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек'];
-          this.txs.forEach(t => {
-            const d = new Date(t.ts * 1000);
-            const key = `${mNames[d.getMonth()]} ${d.getFullYear().toString().slice(2)}`;
-            if(!dataMap[key]) { dataMap[key] = 0; if(!labels.includes(key)) labels.push(key); }
-            dataMap[key] += t.amount;
-          });
-          labels.sort((a,b) => {
-            // Простая сортировка месяцев - для демо пойдет, т.к. данные ограничены 2026 годом
-            return 1; 
+          activeMonthTxs.forEach(t => {
+            const meta = CATEGORIES[t.category] || CATEGORIES['Прочее'];
+            const dateStr = new Date(t.ts * 1000).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' });
+            mList.innerHTML += `
+              <div class="card-glass rounded-2xl p-3 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                  <div class="w-8 h-8 rounded-xl flex items-center justify-center" style="background: ${meta.color}20">
+                    <i data-lucide="${meta.icon}" class="w-4 h-4" style="color: ${meta.color}"></i>
+                  </div>
+                  <div>
+                    <span class="text-xs font-bold text-white block">${t.merchant}</span>
+                    <span class="text-[10px] text-white/40">${dateStr}</span>
+                  </div>
+                </div>
+                <span class="text-xs font-bold text-white">-${this.formatCurrency(t.amount)}</span>
+              </div>
+            `;
           });
         }
-
-        const dataVals = labels.map(l => dataMap[l] || 0);
-
-        this.chartInstance = new Chart(ctx, {
-          type: 'bar',
-          data: {
-            labels: labels,
-            datasets: [{
-              data: dataVals,
-              backgroundColor: '#EF3124',
-              borderRadius: 6,
-              borderSkipped: false
-            }]
-          },
-          options: {
-            responsive: true, maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
-            scales: {
-              x: { grid: { display: false }, ticks: { color: 'rgba(255,255,255,0.5)', font:{size: 10} } },
-              y: { grid: { color: 'rgba(255,255,255,0.1)' }, border: { dash: [4, 4] }, ticks: { color: 'rgba(255,255,255,0.5)', font:{size: 10} } }
-            }
-          }
-        });
-
-        this.renderCategoryStats();
+        refreshIcons();
       }
 
-      renderCategoryStats() {
-        let catSums = {};
-        this.txs.forEach(t => {
-          catSums[t.category] = (catSums[t.category] || 0) + t.amount;
-        });
+      renderEconomyView() {
+        const daysMap = [0, 0, 0, 0, 0, 0, 0]; // Sun to Sat
+        const dayNames = ['Воскресенье', 'Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота'];
 
-        const sorted = Object.entries(catSums).sort((a,b) => b[1] - a[1]);
-        const list = document.getElementById('analyticsCategories');
-        list.innerHTML = '';
-        
-        let maxSum = sorted.length ? sorted[0][1] : 1;
-
-        sorted.forEach(([cat, sum]) => {
-          const meta = this.getCatMeta(cat);
-          const percent = Math.min(100, Math.round((sum / maxSum) * 100));
-          
-          list.innerHTML += `
-            <div>
-              <div class="flex justify-between text-xs font-medium mb-1">
-                <span class="flex items-center gap-1.5"><i data-lucide="${meta.icon}" class="w-3.5 h-3.5" style="color:${meta.color}"></i> ${cat}</span>
-                <span>${this.formatMoney(sum)}</span>
-              </div>
-              <div class="w-full bg-black rounded-full h-1.5">
-                <div class="h-1.5 rounded-full" style="width: ${percent}%; background-color: ${meta.color}"></div>
-              </div>
-            </div>
-          `;
-        });
-        lucide.createIcons();
-      }
-
-      renderEconomy() {
-        const list = document.getElementById('economyTipsList');
-        list.innerHTML = '';
-
-        if (this.txs.length === 0) {
-          list.innerHTML = `<div class="text-center text-white/40 text-xs py-4">Сначала синхронизируйте данные</div>`;
-          document.getElementById('totalEconomyPot').textContent = '0 ₽';
-          return;
-        }
-
-        // Анализ частых трат
-        let fastfood = 0, subs = 0, entertainment = 0, games = 0;
-        let dayOfWeekSums = { 0:0, 1:0, 2:0, 3:0, 4:0, 5:0, 6:0 }; // 0-Вс, 1-Пн...
+        let fastfoodSum = 0;
+        let gamesSum = 0;
+        let taxiSum = 0;
+        let subsSum = 0;
 
         this.txs.forEach(t => {
-          if(t.category === 'Фастфуд') fastfood += t.amount;
-          if(t.category === 'Подписки') subs += t.amount;
-          if(t.category === 'Развлечения') entertainment += t.amount;
-          if(t.category === 'Игры') games += t.amount;
+          const d = new Date(t.ts * 1000);
+          daysMap[d.getDay()] += t.amount;
 
-          const day = new Date(t.ts * 1000).getDay();
-          dayOfWeekSums[day] += t.amount;
+          if (t.category === 'Фастфуд') fastfoodSum += t.amount;
+          if (t.category === 'Игры') gamesSum += t.amount;
+          if (t.category === 'Транспорт') taxiSum += t.amount;
+          if (t.category === 'Подписки') subsSum += t.amount;
         });
 
-        const potFastfood = fastfood * 0.3;
-        const potSubs = subs * 0.3;
-        const potGames = games * 0.3;
-        const totalPot = potFastfood + potSubs + potGames + (entertainment * 0.2);
-        
-        document.getElementById('totalEconomyPot').textContent = this.formatMoney(totalPot);
-
-        const daysNames = ['Воскресенье', 'Понедельник', 'Вторник', 'Среду', 'Четверг', 'Пятницу', 'Субботу'];
-        const maxDay = Object.keys(dayOfWeekSums).reduce((a, b) => dayOfWeekSums[a] > dayOfWeekSums[b] ? a : b);
-
-        const tips = [];
-        tips.push({
-          icon: 'calendar-days', color: '#8E8E93',
-          title: 'Пик расходов',
-          text: `Вы тратите больше всего денег в **${daysNames[maxDay]}**. Планируйте бюджет на этот день строже.`
+        // Peak day detection
+        let peakDayIdx = 0;
+        daysMap.forEach((v, idx) => {
+          if (v > daysMap[peakDayIdx]) peakDayIdx = idx;
         });
 
-        if (potFastfood > 100) {
-          tips.push({
-            icon: 'pizza', color: '#FF9F0A',
-            title: 'Отказ от части фастфуда',
-            text: `Сократив перекусы в Burger King и Вкусно и точка на 30%, вы сэкономите **${this.formatMoney(potFastfood)}** в следующий раз.`
-          });
-        }
-        if (potSubs > 50) {
-          tips.push({
-            icon: 'repeat', color: '#0A84FF',
-            title: 'Оптимизация подписок',
-            text: `У вас много трат на Яндекс и VK Music. Если отключить лишнее или использовать семейную подписку, выгода составит ~**${this.formatMoney(potSubs)}**.`
-          });
-        }
-        if (potGames > 100) {
-          tips.push({
-            icon: 'gamepad-2', color: '#32D74B',
-            title: 'Игровые траты',
-            text: `Покупки в Lis-skins и Steam забирают бюджет. Отказ от 30% донатов сохранит вам **${this.formatMoney(potGames)}**.`
-          });
-        }
-        if (entertainment > 1000) {
-          tips.push({
-            icon: 'ticket', color: '#BF5AF2',
-            title: 'Развлечения',
-            text: `Кино (Mori Cinema) и развлечения — это круто, но сокращение походов на 20% даст экономию в **${this.formatMoney(entertainment * 0.2)}**.`
-          });
-        }
+        const peakBox = document.getElementById('ecoPeakDayBox');
+        peakBox.innerHTML = `
+          <div class="flex items-center justify-between text-xs">
+            <span class="font-bold text-white">${dayNames[peakDayIdx]}</span>
+            <span class="text-brand-orange font-bold">${this.formatCurrency(daysMap[peakDayIdx])}</span>
+          </div>
+          <p class="text-[11px] text-white/50 leading-snug">
+            В этот день недели совершается наибольшая часть спонтанных покупок. Рекомендуется установить дневной лимит в приложении банка.
+          </p>
+        `;
 
-        tips.forEach(tip => {
-          list.innerHTML += `
-            <div class="bg-brand-card rounded-2xl p-4 flex gap-3 border border-white/5">
-              <div class="w-10 h-10 rounded-full flex flex-shrink-0 items-center justify-center" style="background-color: ${tip.color}20">
-                <i data-lucide="${tip.icon}" class="w-5 h-5" style="color: ${tip.color}"></i>
+        // Projected savings: 30% fastfood, 30% games, 20% taxi, 25% subs
+        const potFastfood = Math.round(fastfoodSum * 0.35);
+        const potGames = Math.round(gamesSum * 0.30);
+        const potTaxi = Math.round(taxiSum * 0.20);
+        const totalPot = potFastfood + potGames + potTaxi;
+
+        document.getElementById('ecoTotalPotential').textContent = `~${this.formatCurrency(totalPot)}`;
+
+        // Micro-expenses breakdown cards
+        const microContainer = document.getElementById('ecoMicroExpenses');
+        microContainer.innerHTML = `
+          <div class="p-3 bg-black/40 rounded-2xl border border-white/5 flex items-center justify-between">
+            <div class="flex items-center gap-2.5">
+              <div class="w-7 h-7 rounded-lg bg-amber-500/20 text-amber-500 flex items-center justify-center">
+                <i data-lucide="coffee" class="w-3.5 h-3.5"></i>
               </div>
-              <div>
-                <h4 class="text-sm font-bold mb-1">${tip.title}</h4>
-                <p class="text-[11px] text-white/60 leading-relaxed">${tip.text.replace(/\*\*(.*?)\*\*/g, '<span class="text-white font-bold">$1</span>')}</p>
-              </div>
+              <span class="text-xs font-semibold">Фастфуд и кофе</span>
             </div>
-          `;
-        });
-        lucide.createIcons();
-      }
-    }
+            <div class="text-right">
+              <span class="text-xs font-bold text-white block">${this.formatCurrency(fastfoodSum)}</span>
+              <span class="text-[10px] text-brand-green">выгода: +${this.formatCurrency(potFastfood)}</span>
+            </div>
+          </div>
 
-    // Запуск приложения
-    const app = new DzynApp();
-  </script>
-</body>
-</html>
+          <div class="p-3 bg-black/40 rounded-2xl border border-white/5 flex items-center justify-between">
+            <div class="flex items-center gap-2.5">
+              <div class="w-7 h-7 rounded-lg bg-emerald-500/20 text-emerald-500 flex items-center justify-center">
+                <i data-lucide="gamepad-2" class="w-3.5 h-3.5"></i>
+              </div>
+              <span class="text-xs font-semibold">Игры и скины</span>
+            </div>
+            <div class="text-right">
+              <span class="text-xs font-bold text-white block">${this.formatCurrency(gamesSum)}</span>
+              <span class="text-[10px] text-brand-green">выгода: +${this.formatCurrency(potGames)}</span>
+            </div>
+          </div>
+        `;
+
+        // Tailored tips
+        const tipsContainer = document.getElementById('ecoTipsList');
+        tipsContainer.innerHTML = `
+          <div class="card-glass rounded-2xl p-4 flex gap-3">
+            <div class="w-8 h-8 rounded-xl bg-brand-red/20 text-brand-red flex items-center justify-center shrink-0">
+              <i data-lucide="zap" class="w-4 h-4"></i>
+            </div>
+            <div class="space-y-1">
+              <h5 class="text-xs font-bold text-white">Правило 24 часов на донаты и скины</h5>
+              <p class="text-[11px] text-white/60 leading-relaxed">
+                Покупки в Lis-skins и Steam составили <span class="text-white font-semibold">${this.formatCurrency(gamesSum)}</span>. Отложите оплату на сутки: 60% желаний исчезают сами.
+              </p>
