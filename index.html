@@ -4,15 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>АНАЛитика бабок</title>
-    <!-- Библиотека для Excel/CSV -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-    <!-- Библиотека для Графиков -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Библиотека для чтения PDF файлов -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
-    <script>
-        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
-    </script>
+    <script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';</script>
     
     <style>
         :root {
@@ -58,11 +53,16 @@
         .tx-name { font-size: 15px; font-weight: 600; }
         .tx-sub { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
         .tx-amount { font-size: 15px; font-weight: 700; color: #ff5252; }
+        .tx-cashback { font-size: 11px; color: #4caf50; font-weight: 600; margin-top: 2px; }
 
         .insight-box { background: rgba(239, 49, 36, 0.1); border: 1px solid rgba(239, 49, 36, 0.3); padding: 15px; border-radius: 16px; margin-bottom: 15px; }
         .insight-title { font-size: 13px; color: #ffcccc; font-weight: 600; margin-bottom: 5px; }
         .insight-value { font-size: 20px; font-weight: bold; color: var(--accent); }
         
+        .cashback-box { background: rgba(76, 175, 80, 0.1); border: 1px solid rgba(76, 175, 80, 0.3); padding: 15px; border-radius: 16px; margin-top: 15px; }
+        .cashback-title { font-size: 13px; color: #a5d6a7; font-weight: 600; margin-bottom: 5px; }
+        .cashback-value { font-size: 22px; font-weight: bold; color: #4caf50; }
+
         .filter-select { width: 100%; background: #000; color: #fff; border: 1px solid var(--border); padding: 12px 15px; border-radius: 12px; font-size: 15px; outline: none; margin-bottom: 15px; font-weight: 500; appearance: none; }
         .bank-selector-wrap { background: #1c1c1e; padding: 15px; border-radius: 16px; margin-bottom: 15px; border: 1px solid var(--border); }
         
@@ -91,19 +91,17 @@
         <!-- ВКЛАДКА: ОБЗОР -->
         <div id="view-overview" class="view-section active">
             
-            <!-- Блок выбора банка -->
             <div class="bank-selector-wrap">
                 <label for="bankSelect" style="font-size:14px; font-weight:700; color:var(--accent); margin-bottom:8px; display:block;">Выбери банк, жид:</label>
                 <select id="bankSelect" class="filter-select" style="margin-bottom:0; border-color:#3a3a3c;">
-                    <option value="auto">Автоопределение (Любой банк Excel)</option>
+                    <option value="auto">Автоопределение (Любой банк)</option>
+                    <option value="alfa">Альфа-Банк (Excel / CSV)</option>
                     <option value="sber">Сбербанк (PDF / Excel)</option>
                     <option value="tinkoff">Т-Банк (TXT / Excel / CSV)</option>
-                    <option value="alfa">Альфа-Банк (Excel / CSV)</option>
                     <option value="yandex">Яндекс Пэй (PDF)</option>
                 </select>
             </div>
 
-            <!-- Загрузка файла -->
             <div class="upload-box" onclick="document.getElementById('fileInput').click()">
                 <input type="file" id="fileInput" accept=".csv, .xlsx, .xls, .txt, .pdf" onchange="handleFile(this.files[0])">
                 <div class="upload-icon">📥</div>
@@ -114,7 +112,13 @@
             <div class="card" id="mainCard" style="display: none;">
                 <div class="meta-info" style="margin-top: 0; margin-bottom: 5px;">Общие расходы</div>
                 <div class="balance" id="totalExpense">0 ₽</div>
-                <div class="meta-info" id="fileInfo"></div>
+                
+                <div id="cashbackBox" class="cashback-box" style="display:none;">
+                    <div class="cashback-title">💸 Начислено кэшбэка</div>
+                    <div class="cashback-value" id="totalCashback">+ 0 ₽</div>
+                </div>
+
+                <div class="meta-info" id="fileInfo" style="margin-top: 15px;"></div>
             </div>
 
             <div class="card" id="chartCard" style="display: none;">
@@ -153,7 +157,7 @@
                 </select>
                 
                 <div class="tx-list" id="txList">
-                    <div style="text-align: center; color: var(--text-muted); margin-top: 20px;">Загрузите выписку для просмотра операций</div>
+                    <div style="text-align: center; color: var(--text-muted); margin-top: 20px;">Загрузите выписку</div>
                 </div>
             </div>
         </div>
@@ -188,7 +192,7 @@
         'Развлечения': ['mori cinema', 'кино', 'royal forest', 'парк', 'билет', 'клуб', 'афиша', 'кинотеатр'],
         'Транспорт': ['яндекс.такси', 'такси', 'каршеринг', 'метро', 'ржд', 'авиа', 'бензин', 'азс', 'лукойл', 'газпром'],
         'Маркетплейсы': ['ozon', 'wildberries', 'вайлдберриз', 'aliexpress', 'мегамаркет', 'market'],
-        'Здоровье': ['аптека', 'планета здоровья', 'вита', 'медицина', 'клиника'],
+        'Здоровье': ['аптека', 'планета здоровья', 'вита', 'медицина', 'клиника', 'инвитро'],
         'Переводы': ['перевод', 'пополнение', 'sbp', 'сбп']
     };
 
@@ -226,17 +230,15 @@
     function cleanNumber(val) {
         if (!val) return NaN;
         if (typeof val === 'number') return val;
-        let s = String(val).replace(/[\s\u00A0\u2007\u202F]/g, '').replace('₽', '').replace('RUR', '').replace('RUB', '').replace(',', '.');
+        let s = String(val).replace(/[\s\u00A0\u2007\u202F\+]/g, '').replace('₽', '').replace('RUR', '').replace('RUB', '').replace(',', '.');
         return parseFloat(s);
     }
 
-    // МАРШРУТИЗАТОР ЗАГРУЗКИ ПО БАНКАМ
     async function handleFile(file) {
         if (!file) return;
         const bank = document.getElementById('bankSelect').value;
         const ext = file.name.split('.').pop().toLowerCase();
 
-        // 1. Если это PDF (Сбер или Яндекс)
         if (ext === 'pdf') {
             const reader = new FileReader();
             reader.onload = async function(e) {
@@ -249,29 +251,22 @@
                         const textContent = await page.getTextContent();
                         fullText += textContent.items.map(item => item.str).join(' ') + '\n';
                     }
-                    
                     if (bank === 'sber' || bank === 'auto') parseSberPDF(fullText, file.name);
                     else if (bank === 'yandex') parseYandexPDF(fullText, file.name);
                     else parseSberPDF(fullText, file.name);
-                } catch (err) {
-                    alert('Ошибка чтения PDF: ' + err.message);
-                }
+                } catch (err) { alert('Ошибка чтения PDF: ' + err.message); }
             };
             reader.readAsArrayBuffer(file);
             return;
         }
 
-        // 2. Если это TXT (Т-Банк сводка)
         if (ext === 'txt') {
             const reader = new FileReader();
-            reader.onload = function(e) {
-                parseTinkoffTXT(e.target.result, file.name);
-            };
+            reader.onload = function(e) { parseTinkoffTXT(e.target.result, file.name); };
             reader.readAsText(file);
             return;
         }
 
-        // 3. Если это Excel / CSV (Альфа, Т-Банк детали, Сбер детали)
         const reader = new FileReader();
         reader.onload = function(e) {
             try {
@@ -279,19 +274,14 @@
                 const workbook = XLSX.read(data, { type: 'array', cellDates: true, raw: false });
                 const rows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { header: 1, defval: '' });
                 parseUniversalExcel(rows, file.name, bank);
-            } catch (err) {
-                alert('Ошибка чтения Excel/CSV: ' + err.message);
-            }
+            } catch (err) { alert('Ошибка чтения Excel/CSV: ' + err.message); }
         };
         reader.readAsArrayBuffer(file);
     }
 
-    // ПАРСЕР PDF СБЕРБАНКА
     function parseSberPDF(text, fileName) {
         const newParsed = [];
-        // Убираем переносы, делаем один сплошной текст
         const cleanText = text.replace(/\s+/g, ' ');
-        // Режем текст по датам вида DD.MM.YYYY
         const chunks = cleanText.split(/(?=\d{2}\.\d{2}\.\d{4})/);
 
         for (let chunk of chunks) {
@@ -299,97 +289,65 @@
             if (!dateMatch) continue;
             const date = dateMatch[1];
 
-            // Пропускаем пополнения и переводы "НА" карту
             if (chunk.includes('+') || chunk.toLowerCase().includes('пополнение')) continue;
 
-            // Ищем сумму (цифры с запятой в конце)
             const amtMatch = chunk.match(/(\d{1,3}(?:[ \u00A0]\d{3})*,\d{2})/g);
             if (amtMatch && amtMatch.length > 0) {
                 let amount = parseFloat(amtMatch[0].replace(/[\s\u00A0]/g, '').replace(',', '.'));
                 if (amount === 0) continue;
 
-                // Очищаем описание от даты и найденной суммы
                 let desc = chunk.replace(date, '').replace(amtMatch[0], '').trim();
-                desc = desc.replace(/^[\d:]+\s*/, ''); // Убираем время операции
-                desc = desc.replace(/^\d+\s*/, ''); // Убираем код авторизации
-                desc = desc.slice(0, 60).trim(); // Берем суть операции
+                desc = desc.replace(/^[\d:]+\s*/, '').replace(/^\d+\s*/, '').slice(0, 60).trim();
 
-                newParsed.push({
-                    amount: amount,
-                    name: desc || 'Операция Сбербанк',
-                    category: detectCategory(desc),
-                    date: date
-                });
+                newParsed.push({ amount, name: desc || 'Операция', category: detectCategory(desc), date, cashback: 0 });
             }
         }
-
-        if (newParsed.length === 0) {
-            alert('Расходов в Сбер PDF не найдено.');
-            return;
-        }
-
+        if (newParsed.length === 0) { alert('Расходов в Сбер PDF не найдено.'); return; }
         saveAndRender(newParsed, fileName);
     }
 
-    // ПАРСЕР PDF ЯНДЕКС ПЭЙ
     function parseYandexPDF(text, fileName) {
         const expenseMatch = text.match(/Всего расходных операций[\s|]+([\d\s]+,\d{2})/i);
         if (expenseMatch) {
             let amount = parseFloat(expenseMatch[1].replace(/[\s\u00A0]/g, '').replace(',', '.'));
-            if (amount === 0) {
-                 alert('По выписке Яндекс Пэй расходов не найдено (0.00).');
-                 return;
-            }
-            const arr = [{ amount, name: 'Сводка расходов Яндекс Пэй', category: 'Другое', date: new Date().toLocaleDateString('ru-RU') }];
-            alert('В этой PDF Яндекса только общая сумма, без детализации операций.');
-            saveAndRender(arr, fileName);
-        } else {
-             alert('Не удалось найти расходы в PDF Яндекс Пэй.');
-        }
+            saveAndRender([{ amount, name: 'Сводка расходов Яндекс Пэй', category: 'Другое', date: new Date().toLocaleDateString('ru-RU'), cashback: 0 }], fileName);
+        } else alert('Не удалось найти расходы в PDF Яндекс Пэй.');
     }
 
-    // ПАРСЕР TXT Т-БАНК
     function parseTinkoffTXT(text, fileName) {
         const expenseMatch = text.match(/Расходы:\s*(?:−|-)?\s*([\d\s\u00A0]+(?:,\d{2})?)/i);
         if (expenseMatch) {
             let amount = parseFloat(expenseMatch[1].replace(/[\s\u00A0]/g, '').replace(',', '.'));
-            const arr = [{ amount, name: 'Т-Банк: Расходы за месяц', category: 'Другое', date: new Date().toLocaleDateString('ru-RU') }];
-            alert('В TXT файле Т-Банка нет списка покупок, только сводка. Чтобы видеть чеки, скачай выписку в формате Excel (XLSX).');
-            saveAndRender(arr, fileName);
-        } else {
-            alert('Не найдены расходы в TXT файле Т-Банка.');
-        }
+            saveAndRender([{ amount, name: 'Т-Банк: Расходы за месяц', category: 'Другое', date: new Date().toLocaleDateString('ru-RU'), cashback: 0 }], fileName);
+        } else alert('Не найдены расходы в TXT файле Т-Банка.');
     }
 
-    // УНИВЕРСАЛЬНЫЙ ПАРСЕР EXCEL / CSV (Альфа, Т-Банк детали, Сбер)
+    // УМНЫЙ ПАРСЕР ДЛЯ АЛЬФЫ И ДРУГИХ БАНКОВ
     function parseUniversalExcel(rows, fileName, bankId) {
         let headerIndex = -1;
-        let colDate = -1, colAmount = -1, colName = -1, colCat = -1;
-        let isExplicitExpense = false;
+        let cols = { date: -1, amount: -1, type: -1, exp: -1, name: -1, cat: -1, cashback: -1 };
 
+        // Ищем заголовки колонок
         for (let i = 0; i < Math.min(rows.length, 150); i++) {
             const row = rows[i].map(c => String(c).toLowerCase().trim());
             if (row.length < 2) continue;
 
-            const dateIdx = row.findIndex(c => c.includes('дата') || c.includes('date') || c.includes('время'));
-            const expIdx = row.findIndex(c => c.includes('расход') || c.includes('списание') || c.includes('дебет'));
-            const sumIdx = row.findIndex(c => c.includes('сумма') || c.includes('amount'));
-            const nameIdx = row.findIndex(c => c.includes('описание') || c.includes('назначение') || c.includes('получатель') || c.includes('операция'));
+            const dIdx = row.findIndex(c => c.includes('дата') || c.includes('date') || c.includes('время'));
+            const tIdx = row.findIndex(c => c === 'тип' || c === 'тип операции');
+            const eIdx = row.findIndex(c => c === 'расход' || c === 'списание' || c === 'дебет');
+            const sIdx = row.findIndex(c => c.includes('сумма') || c.includes('amount'));
+            const nIdx = row.findIndex(c => c.includes('описание') || c.includes('назначение') || c.includes('получатель') || c.includes('операция'));
+            const cIdx = row.findIndex(c => c.includes('кэшбэк') || c.includes('кешбэк') || c.includes('бонус') || c.includes('начислено'));
 
-            if (dateIdx !== -1 && (expIdx !== -1 || sumIdx !== -1)) {
+            if (dIdx !== -1 && (sIdx !== -1 || eIdx !== -1)) {
                 headerIndex = i;
-                colDate = dateIdx;
-                
-                // Для Альфы приоритет колонке Расход
-                if (expIdx !== -1) {
-                    colAmount = expIdx;
-                    isExplicitExpense = true;
-                } else {
-                    colAmount = sumIdx;
-                }
-                
-                colName = nameIdx !== -1 ? nameIdx : -1;
-                colCat = row.findIndex(c => c.includes('категория') || c.includes('mcc'));
+                cols.date = dIdx;
+                cols.type = tIdx;
+                cols.exp = eIdx;
+                cols.amount = (eIdx !== -1) ? eIdx : sIdx;
+                cols.name = nIdx;
+                cols.cat = row.findIndex(c => c.includes('категория') || c.includes('mcc'));
+                cols.cashback = cIdx;
                 break;
             }
         }
@@ -399,71 +357,57 @@
         if (headerIndex !== -1) {
             for (let i = headerIndex + 1; i < rows.length; i++) {
                 const row = rows[i];
-                if (!row || row.length <= colAmount) continue;
+                if (!row || row.length <= cols.amount) continue;
 
-                let rawAmount = row[colAmount];
+                let rawAmount = row[cols.amount];
                 let num = cleanNumber(rawAmount);
                 if (isNaN(num) || num === 0) continue;
 
-                // Фильтр для колонок типа "Сумма" - берем только минусовые (Т-Банк)
-                // Исключение: если явно выбрана колонка "Расход" (Альфа)
-                if (!isExplicitExpense && num > 0 && !String(rawAmount).includes('-')) {
+                // Проверяем тип операции по колонке "Тип", если она есть (это решает проблему Альфы)
+                let typeVal = cols.type !== -1 ? String(row[cols.type]).toLowerCase() : '';
+                let isExplicitExpenseByColumnType = typeVal.includes('списание') || typeVal.includes('расход') || typeVal.includes('оплата') || typeVal.includes('покупка');
+                
+                // Если тип явно пополнение/доход - пропускаем
+                if (!isExplicitExpenseByColumnType && cols.type !== -1 && (typeVal.includes('пополнение') || typeVal.includes('приход'))) {
+                    continue; 
+                }
+
+                // Если колонки Тип нет, фильтруем по минусу (Т-Банк, Сбер без явного Расхода)
+                if (cols.type === -1 && cols.exp === -1 && num > 0 && !String(rawAmount).includes('-')) {
                     continue;
                 }
 
                 let amount = Math.abs(num);
-                let dateVal = row[colDate] || '';
+                let dateVal = row[cols.date] || '';
                 let dateStr = typeof dateVal === 'object' && dateVal instanceof Date ? dateVal.toLocaleDateString('ru-RU') : String(dateVal).split(' ')[0];
-                let description = (colName !== -1 && row[colName]) ? String(row[colName]).trim() : '';
-                let bankCategory = (colCat !== -1 && row[colCat]) ? String(row[colCat]).trim() : '';
+                let description = (cols.name !== -1 && row[cols.name]) ? String(row[cols.name]).trim() : '';
+                let bankCategory = (cols.cat !== -1 && row[cols.cat]) ? String(row[cols.cat]).trim() : '';
+                
+                // Парсим кэшбэк, если колонка найдена
+                let cashbackVal = 0;
+                if (cols.cashback !== -1 && row[cols.cashback]) {
+                    let cbNum = cleanNumber(row[cols.cashback]);
+                    if (!isNaN(cbNum) && cbNum > 0) cashbackVal = cbNum;
+                }
 
                 newParsed.push({
                     amount,
                     name: description || bankCategory || 'Покупка',
                     category: detectCategory(description + ' ' + bankCategory),
-                    date: dateStr
+                    date: dateStr,
+                    cashback: cashbackVal
                 });
-            }
-        } else {
-            // Эвристика для Excel без понятной шапки
-            for (let i = 0; i < rows.length; i++) {
-                const row = rows[i];
-                if (!row || row.length < 2) continue;
-                let foundDate = null, foundAmount = null, foundText = [];
-
-                for (let cell of row) {
-                    if (!cell) continue;
-                    let strCell = String(cell).trim();
-                    if (!foundDate && (cell instanceof Date || /\d{2}[./-]\d{2}[./-]\d{2,4}/.test(strCell))) {
-                        foundDate = cell instanceof Date ? cell.toLocaleDateString('ru-RU') : strCell.split(' ')[0];
-                        continue;
-                    }
-                    let num = cleanNumber(cell);
-                    if (!isNaN(num) && num !== 0) {
-                        if (String(cell).includes('-') || typeof cell === 'number') {
-                            if (!foundAmount) foundAmount = Math.abs(num);
-                            continue;
-                        }
-                    }
-                    if (strCell.length > 2 && isNaN(Number(strCell))) foundText.push(strCell);
-                }
-
-                if (foundDate && foundAmount) {
-                    let desc = foundText.join(' ');
-                    newParsed.push({ amount: foundAmount, name: desc || 'Операция', category: detectCategory(desc), date: foundDate });
-                }
             }
         }
 
         if (newParsed.length === 0) {
-            alert('Расходов в таблице не найдено.');
+            alert('Расходов в таблице не найдено. Проверьте формат.');
             return;
         }
 
         saveAndRender(newParsed, fileName);
     }
 
-    // СОХРАНЕНИЕ И ОТРИСОВКА
     function saveAndRender(dataArray, fileName) {
         transactions = dataArray;
         localStorage.setItem('dzyn_smart_data', JSON.stringify(transactions));
@@ -479,13 +423,24 @@
         document.getElementById('fileInfo').innerText = (localStorage.getItem('dzyn_smart_meta') || 'Файл') + ' (' + transactions.length + ' операций)';
 
         let total = 0;
+        let totalCashback = 0;
         const catMap = {};
+        
         transactions.forEach(tx => {
             total += tx.amount;
+            totalCashback += (tx.cashback || 0);
             catMap[tx.category] = (catMap[tx.category] || 0) + tx.amount;
         });
 
         document.getElementById('totalExpense').innerText = total.toLocaleString('ru-RU', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' ₽';
+
+        // Отображение кэшбэка
+        if (totalCashback > 0) {
+            document.getElementById('cashbackBox').style.display = 'block';
+            document.getElementById('totalCashback').innerText = '+ ' + totalCashback.toLocaleString('ru-RU', {minimumFractionDigits: 2}) + ' ₽';
+        } else {
+            document.getElementById('cashbackBox').style.display = 'none';
+        }
 
         const ctx = document.getElementById('categoryChart').getContext('2d');
         if (myChart) myChart.destroy();
@@ -542,9 +497,7 @@
     function updateFilterDropdown(catMap) {
         const select = document.getElementById('catFilter');
         select.innerHTML = '<option value="all">Все категории</option>';
-        Object.keys(catMap).sort().forEach(cat => {
-            select.innerHTML += `<option value="${cat}">${icons[cat] || ''} ${cat}</option>`;
-        });
+        Object.keys(catMap).sort().forEach(cat => { select.innerHTML += `<option value="${cat}">${icons[cat] || ''} ${cat}</option>`; });
     }
 
     function renderTransactions() {
@@ -553,6 +506,7 @@
         let html = '';
         const filtered = filter === 'all' ? transactions : transactions.filter(t => t.category === filter);
         filtered.forEach(tx => {
+            let cbHtml = tx.cashback > 0 ? `<div class="tx-cashback">+${tx.cashback} ₽ кэшбэк</div>` : '';
             html += `
                 <div class="tx-item">
                     <div class="tx-left">
@@ -560,6 +514,7 @@
                         <div>
                             <div class="tx-name">${escapeHtml(tx.name)}</div>
                             <div class="tx-sub">${escapeHtml(tx.category)} • ${escapeHtml(tx.date)}</div>
+                            ${cbHtml}
                         </div>
                     </div>
                     <div class="tx-amount">-${tx.amount.toLocaleString('ru-RU', {minimumFractionDigits: 2})} ₽</div>
