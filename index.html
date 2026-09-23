@@ -54,7 +54,7 @@
 
         .chart-container { position: relative; height: 220px; width: 100%; margin: 10px 0; }
         
-        /* Modals (No Blur Bugs) */
+        /* Modals */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1000; justify-content: center; align-items: center; padding: 20px; }
         .modal-overlay.active { display: flex; }
         .modal-content { background: var(--card-bg); width: 100%; max-width: 400px; border-radius: 24px; padding: 24px; }
@@ -67,7 +67,7 @@
         .btn-secondary { background: #333; color: white; }
 
         /* CMD Console Styling */
-        .cmd-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; flex-direction: column; padding: 15px; }
+        .cmd-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 2000; flex-direction: column; padding: 15px; }
         .cmd-modal.active { display: flex; }
         .cmd-window { flex: 1; background: #0c0c0c; border: 1px solid #333; border-radius: 8px; display: flex; flex-direction: column; overflow: hidden; font-family: monospace; }
         .cmd-header { background: #222; padding: 12px; color: #ccc; display: flex; justify-content: space-between; align-items: center; font-weight: bold; font-size: 14px; }
@@ -76,6 +76,7 @@
         .cmd-err { color: #f55; }
         .cmd-ok { color: #5f5; }
         .cmd-info { color: #0cf; }
+        .cmd-raw { color: #888; font-size: 10px; }
 
         .bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 500px; background: #111; border-top: 1px solid #333; display: flex; justify-content: space-around; padding: 10px 0 var(--safe-area-bottom); z-index: 100; }
         .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; color: var(--text-muted); font-size: 11px; font-weight: 500; cursor: pointer; }
@@ -94,7 +95,7 @@
             <span id="greetingName">Аналитика расходов</span>
         </div>
         <div class="header-actions">
-            <button class="btn-icon" onclick="openModal('cmdModal')" title="Открыть логи консоли">>_</button>
+            <button class="btn-icon" onclick="openModal('cmdModal')" title="Терминал">>_</button>
             <button class="btn-icon" onclick="openModal('pasteModal')">📋</button>
             <button class="btn-icon" onclick="openModal('settingsModal')">⚙️</button>
         </div>
@@ -118,12 +119,12 @@
             <div class="card" style="padding: 0; background: transparent; box-shadow: none;">
                 <h3 style="margin-bottom: 10px; font-size: 18px; padding: 0 5px;">История операций</h3>
                 <div class="transaction-list" id="txList">
-                    <div style="text-align: center; padding: 20px; color: var(--text-muted);">Нет данных.</div>
+                    <div style="text-align: center; padding: 20px; color: var(--text-muted);">Нет данных. Нажмите ⚙️</div>
                 </div>
             </div>
         </div>
 
-        <!-- Вкладка АНАЛИТИКА -->
+        <!-- Вкладка ЭКОНОМИЯ -->
         <div id="view-analytics" class="view-section">
             <div class="card">
                 <h3 style="margin-bottom: 10px;">Прогноз экономии</h3>
@@ -159,7 +160,7 @@
     <div class="modal-overlay" id="pasteModal">
         <div class="modal-content">
             <div class="modal-title">Ручной ввод</div>
-            <textarea id="inpText" class="input-field" rows="6" placeholder="Вставьте сообщения Дзынь..."></textarea>
+            <textarea id="inpText" class="input-field" rows="6" placeholder="Вставьте текст (например: Покупка 149,99 ₽, Пеликан.)"></textarea>
             <button class="btn btn-primary" onclick="processManualPaste()">Распознать текст</button>
             <button class="btn btn-secondary" onclick="closeModal('pasteModal')">Закрыть</button>
         </div>
@@ -176,7 +177,8 @@
                 <div class="cmd-line cmd-info">Система готова. Ожидание данных...</div>
             </div>
         </div>
-        <button class="btn btn-secondary" style="margin-top:15px;" onclick="closeModal('cmdModal'); renderOverview(); renderAnalyticsTab();">Скрыть терминал</button>
+        <button class="btn btn-secondary" style="margin-top:15px;" onclick="closeModal('cmdModal'); renderOverview(); renderAnalyticsTab();">Скрыть терминал и обновить</button>
+        <button class="btn btn-primary" onclick="localStorage.removeItem('dzyn_txs'); transactions=[]; appLog('База очищена', 'warn');">Очистить базу данных</button>
     </div>
 
     <div class="bottom-nav">
@@ -196,20 +198,19 @@
     let myChart = null;
     
     const categoryMap = {
+        'Супермаркеты': ['пятерочка', 'магнит', 'перекресток', 'ашан', 'лента', 'спар', 'вкусвилл', 'миндаль', 'пеликан', 'витаград'],
         'Фастфуд': ['вкусно', 'burger king', 'kfc', 'бургер', 'додо', 'пицца', 'шаурма', 'ростикс'],
         'Игры и Софт': ['lis-skins', 'majestic', 'steam', 'epic games', 'playstation', 'vk play'],
         'Подписки': ['vk music', 'yandex', 'яндекс', 'подписка', 'pure', 'twinby', 'mamba', 'telegram', 'премиум'],
         'Развлечения': ['mori cinema', 'кино', 'royal forest', 'парк', 'билет', 'афиша'],
-        'Супермаркеты': ['пятерочка', 'магнит', 'перекресток', 'ашан', 'лента', 'спар', 'вкусвилл'],
         'Транспорт': ['яндекс.такси', 'такси', 'метро', 'ржд', 'авиа', 'автобус'],
         'Маркетплейсы': ['ozon', 'wildberries', 'aliexpress', 'мегамаркет'],
         'Переводы': ['перевод', 'пополнение', 'sbp', 'сбп']
     };
 
     const categoryIcons = {
-        'Фастфуд': '🍔', 'Игры и Софт': '🎮', 'Подписки': '🎵',
-        'Развлечения': '🎬', 'Супермаркеты': '🛒', 'Транспорт': '🚕',
-        'Маркетплейсы': '🛍️', 'Переводы': '💸', 'Другое': '💳'
+        'Супермаркеты': '🛒', 'Фастфуд': '🍔', 'Игры и Софт': '🎮', 'Подписки': '🎵',
+        'Развлечения': '🎬', 'Транспорт': '🚕', 'Маркетплейсы': '🛍️', 'Переводы': '💸', 'Другое': '💳'
     };
 
     const SEPT_1_2026_UNIX = 1788220800; 
@@ -241,7 +242,6 @@
     function openModal(id) { document.getElementById(id).classList.add('active'); }
     function closeModal(id) { document.getElementById(id).classList.remove('active'); }
 
-    // --- ФУНКЦИЯ ЛОГИРОВАНИЯ В CMD ---
     function appLog(msg, type) {
         var out = document.getElementById('cmdBody');
         var line = document.createElement('div');
@@ -249,6 +249,7 @@
         if(type === 'error') line.className += ' cmd-err';
         else if(type === 'ok') line.className += ' cmd-ok';
         else if(type === 'info') line.className += ' cmd-info';
+        else if(type === 'raw') line.className += ' cmd-raw';
         
         var d = new Date();
         var t = d.getHours().toString().padStart(2,'0') + ':' + d.getMinutes().toString().padStart(2,'0') + ':' + d.getSeconds().toString().padStart(2,'0');
@@ -275,56 +276,72 @@
         if(!token) { alert('Укажите токен!'); return; }
         
         closeModal('settingsModal');
-        openModal('cmdModal'); // Открываем терминал
+        openModal('cmdModal');
         
         appLog('--- СТАРТ СИНХРОНИЗАЦИИ ---', 'info');
-        appLog('Подключение к API ВКонтакте...');
+        appLog('Прямой запрос getHistory (лимит 200)...');
         appLog('Peer ID: ' + peer);
-        
-        var vkCode = 'var a=API.messages.getHistory({"peer_id":'+peer+',"count":100,"offset":0});var b=API.messages.getHistory({"peer_id":'+peer+',"count":100,"offset":100});return [a,b];';
 
         try {
-            const response = await new Promise((resolve, reject) => {
+            const apiData = await new Promise((resolve, reject) => {
                 var cbName = 'vk_cb_' + Date.now();
                 var script = document.createElement('script');
                 window[cbName] = function(data) {
                     delete window[cbName];
                     script.remove();
-                    if(data.error) reject(data.error); else resolve(data.response);
+                    resolve(data);
                 };
                 script.onerror = function() { reject(new Error('Сетевая ошибка API')); };
-                script.src = 'https://api.vk.com/method/execute?code=' + encodeURIComponent(vkCode) + '&access_token=' + encodeURIComponent(token) + '&v=5.199&callback=' + cbName;
+                // Запрашиваем напрямую 200 сообщений без execute
+                script.src = 'https://api.vk.com/method/messages.getHistory?peer_id=' + encodeURIComponent(peer) + '&count=200&access_token=' + encodeURIComponent(token) + '&v=5.199&callback=' + cbName;
                 document.body.appendChild(script);
             });
 
-            var merged = [];
-            if(response && response[0] && response[0].items) merged = merged.concat(response[0].items);
-            if(response && response[1] && response[1].items) merged = merged.concat(response[1].items);
+            // Выводим сырой ответ ВК для диагностики
+            appLog('Ответ ВК: ' + JSON.stringify(apiData).substring(0, 150) + '...', 'raw');
 
-            if(merged.length === 0) {
-                appLog('Ответ API: Сообщений не найдено.', 'warn');
+            if (apiData.error) {
+                appLog('Ошибка от ВК: ' + apiData.error.error_msg, 'error');
                 return;
             }
 
-            appLog('Успешно загружено пакетов сообщений: ' + merged.length, 'ok');
-            appLog('Фильтрация по дате (только после 1 Сентября 2026)...', 'info');
+            if (!apiData.response || !apiData.response.items) {
+                appLog('ВК вернул пустой или неверный ответ.', 'warn');
+                return;
+            }
+
+            var items = apiData.response.items;
+
+            if(items.length === 0) {
+                appLog('В этом диалоге нет сообщений.', 'warn');
+                return;
+            }
+
+            appLog('Успешно загружено сообщений: ' + items.length, 'ok');
+            appLog('Фильтрация по дате (только после 01.09.2026)...', 'info');
             
             var validTextsAndDates = [];
-            for(var i = 0; i < merged.length; i++) {
-                var msg = merged[i];
+            var skippedOld = 0;
+            
+            for(var i = 0; i < items.length; i++) {
+                var msg = items[i];
                 if(!msg.text) continue;
                 
                 if(msg.date < SEPT_1_2026_UNIX) {
-                    var oldDate = new Date(msg.date * 1000).toLocaleDateString('ru-RU');
-                    appLog('Отброшено (старое): ' + oldDate, 'error');
-                    continue; // Пропускаем всё что старше 1 сент
+                    skippedOld++;
+                    continue;
                 }
                 validTextsAndDates.push({ text: msg.text, timestamp: msg.date });
             }
 
+            if (skippedOld > 0) {
+                appLog('Отброшено старых сообщений (до сентября): ' + skippedOld, 'error');
+            }
+
             appLog('Осталось свежих сообщений: ' + validTextsAndDates.length, 'ok');
+            
             if(validTextsAndDates.length > 0) {
-                appLog('Запуск парсера чеков...');
+                appLog('Запуск парсера чеков Альфа-Банка...');
                 var added = parseMessagesList(validTextsAndDates);
                 appLog('Готово! Сохранено новых транзакций: ' + added, 'ok');
             } else {
@@ -332,8 +349,7 @@
             }
             
         } catch(err) {
-            appLog('ОШИБКА: ' + (err.error_msg || err.message), 'error');
-            if(err.error_code === 9) appLog('Flood Control: ВК заблокировал этот токен. Смените клиент на Lollipop или VK Me.', 'error');
+            appLog('ОШИБКА: ' + err.message, 'error');
         }
     }
 
@@ -344,7 +360,15 @@
         openModal('cmdModal');
         appLog('--- РУЧНОЙ ВВОД ---', 'info');
         
-        var added = parseMessagesList([{ text: text, timestamp: Math.floor(Date.now()/1000) }]);
+        var lines = text.split('\n');
+        var mockItems = [];
+        for(var i=0; i<lines.length; i++) {
+            if(lines[i].trim().length > 5) {
+                mockItems.push({ text: lines[i], timestamp: Math.floor(Date.now()/1000) - i*60 });
+            }
+        }
+        
+        var added = parseMessagesList(mockItems);
         appLog('Распознано транзакций: ' + added, 'ok');
         
         closeModal('pasteModal');
@@ -356,33 +380,27 @@
         
         for (var i = 0; i < msgArray.length; i++) {
             var item = msgArray[i];
-            var originalText = item.text;
+            var text = item.text.split('\n').join(' ');
             var txDateObj = new Date(item.timestamp * 1000);
             
-            var text = originalText.split('\n').join(' ');
+            // Идеальный парсинг формата "Покупка 149,99 ₽, Пеликан."
+            var match = text.match(/Покупка\s*([\d\s]+(?:[.,]\d+)?)\s*[₽р]\s*,\s*([^.]+)/i);
             
-            var amountMatch = text.match(/([\d\s]+(?:\.\d+)?)\s*[₽р]/i);
-            if (!amountMatch) {
-                appLog('Парсинг: пропуск (нет суммы) -> ' + text.substring(0, 30) + '...', 'error');
+            if (!match) {
+                // Запасной вариант для других типов чеков (без запятой перед магазином)
+                match = text.match(/(?:Покупка|Оплата)\s*([\d\s]+(?:[.,]\d+)?)\s*[₽р][^A-Za-zА-Яа-я]*([A-Za-zА-Яа-я0-9\s-]+)/i);
+            }
+            
+            if (!match) {
+                appLog('Парсинг: пропуск (не чек) -> ' + text.substring(0, 30) + '...', 'raw');
                 continue;
             }
             
-            var amountStr = amountMatch[1].split(' ').join('');
+            var amountStr = match[1].replace(/\s/g, '').replace(',', '.');
             var amount = parseFloat(amountStr);
             if(isNaN(amount) || amount <= 0) continue;
             
-            var merchant = 'Неизвестно';
-            var merchMatch = text.match(/(?:Где|Место|в|на)\s*:?\s*([a-zA-Zа-яА-Я0-9\s\.\*_-]+)/i);
-            
-            if (merchMatch && merchMatch[1]) {
-                merchant = merchMatch[1].split('Баланс')[0].split('Карта')[0].trim();
-            } else {
-                var parts = text.split(amountMatch[0]);
-                if(parts.length > 1) {
-                    merchant = parts[1].split('Баланс')[0].split('Карта')[0].trim().substring(0, 30);
-                }
-            }
-            if(!merchant || merchant.length < 2) merchant = 'Покупка';
+            var merchant = match[2].trim();
             
             var cat = 'Другое';
             var lowerMerch = merchant.toLowerCase();
@@ -419,7 +437,6 @@
                 if(!seen[key]){ seen[key] = true; uniqueTxs.push(t); }
             }
             transactions = uniqueTxs;
-            // Сортировка по дате (новые сверху)
             transactions.sort(function(a,b){ return b.ts - a.ts; });
             localStorage.setItem('dzyn_txs', JSON.stringify(transactions));
         }
@@ -428,7 +445,12 @@
     }
 
     function renderOverview() {
-        if(!transactions.length) return;
+        if(!transactions.length) {
+            document.getElementById('txList').innerHTML = '<div style="text-align: center; padding: 20px; color: var(--text-muted);">Нет данных. Нажмите ⚙️</div>';
+            document.getElementById('mainTotal').innerText = '0 ₽';
+            if(myChart) { myChart.destroy(); myChart = null; }
+            return;
+        }
         
         var total = 0;
         var catTotals = {};
@@ -442,7 +464,6 @@
             if(i < 30) {
                 var icon = categoryIcons[tx.category] || categoryIcons['Другое'];
                 var dispDate = tx.date || 'Неизвестно';
-                
                 listHTML += '<div class="transaction-item"><div class="tx-left"><div class="tx-icon">' + icon + '</div><div class="tx-details"><span class="tx-title">' + tx.merchant + '</span><span class="tx-date">' + tx.category + ' • ' + dispDate + '</span></div></div><div class="tx-amount">-' + tx.amount.toLocaleString('ru-RU') + ' ₽</div></div>';
             }
         }
@@ -480,6 +501,8 @@
         var filterList = document.getElementById('filterList');
         if(!transactions.length) {
             filterList.innerHTML = '<div style="color:#888; text-align:center;">Нет данных.</div>';
+            document.getElementById('savingsAmount').innerText = '0 ₽';
+            document.getElementById('smartTip').innerText = 'Отметьте галочками категории ниже.';
             return;
         }
 
@@ -517,11 +540,11 @@
             selectedCats.push(cb.value);
         }
 
-        document.getElementById('savingsAmount').innerText = '+ ' + potentialSavings.toLocaleString('ru-RU') + ' ₽';
+        document.getElementById('savingsAmount').innerText = '+ ' + potentialSavings.toLocaleString('ru-RU', {minimumFractionDigits: 0, maximumFractionDigits: 2}) + ' ₽';
         
         var tip = 'Отметьте галочками категории для отмены.';
         if(potentialSavings > 0) {
-            tip = 'Если исключить: <b>' + selectedCats.join(', ') + '</b>, можно сэкономить ' + potentialSavings.toLocaleString('ru-RU') + ' ₽.<br><br>';
+            tip = 'Если исключить: <b>' + selectedCats.join(', ') + '</b>, можно сэкономить ' + potentialSavings.toLocaleString('ru-RU', {minimumFractionDigits: 0, maximumFractionDigits: 2}) + ' ₽.<br><br>';
             if(selectedCats.indexOf('Фастфуд') !== -1) tip += '🍔 <i>Совет: готовка дома обходится в среднем в 3 раза дешевле.</i><br>';
             if(selectedCats.indexOf('Игры и Софт') !== -1) tip += '🎮 <i>Совет: виртуальные покупки лучше откладывать на пару дней.</i>';
         }
