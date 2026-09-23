@@ -59,7 +59,7 @@
         /* Chart */
         .chart-container { position: relative; height: 220px; width: 100%; margin: 10px 0; }
         
-        /* Modals (Fixed!) */
+        /* Modals (Fixed) */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); backdrop-filter: blur(5px); z-index: 1000; justify-content: center; align-items: center; padding: 20px; }
         .modal-overlay.active { display: flex; }
         .modal-content { background: var(--card-bg); width: 100%; max-width: 400px; border-radius: 24px; padding: 24px; }
@@ -184,7 +184,7 @@
     let transactions = JSON.parse(localStorage.getItem('dzyn_txs')) || [];
     let myChart = null;
     
-    // Карта ключевых слов (подстроена под популярные сервисы)
+    // Карта ключевых слов
     const categoryMap = {
         'Фастфуд': ['вкусно', 'burger king', 'kfc', 'бургер', 'додо', 'пицца', 'шаурма'],
         'Игры и Софт': ['lis-skins', 'majestic', 'steam', 'epic games', 'playstation', 'vk play'],
@@ -204,16 +204,19 @@
 
     // --- ИНИЦИАЛИЗАЦИЯ ---
     window.onload = () => {
-        // Загрузка имени
-        const savedName = localStorage.getItem('vk_name') || 'Асрорбек';
-        document.getElementById('greetingName').innerText = `Привет, ${savedName}!`;
-        document.getElementById('inpName').value = savedName;
-        
-        document.getElementById('inpToken').value = localStorage.getItem('vk_token') || '';
-        document.getElementById('inpPeer').value = localStorage.getItem('vk_peer_id') || '-218837624';
-        
-        renderOverview();
-        renderAnalyticsTab();
+        try {
+            const savedName = localStorage.getItem('vk_name') || 'Асрорбек';
+            document.getElementById('greetingName').innerText = 'Привет, ' + savedName + '!';
+            document.getElementById('inpName').value = savedName;
+            
+            document.getElementById('inpToken').value = localStorage.getItem('vk_token') || '';
+            document.getElementById('inpPeer').value = localStorage.getItem('vk_peer_id') || '-218837624';
+            
+            renderOverview();
+            renderAnalyticsTab();
+        } catch(e) {
+            console.error('Ошибка инициализации:', e);
+        }
     };
 
     // --- НАВИГАЦИЯ ---
@@ -225,7 +228,7 @@
         element.classList.add('active');
     }
 
-    // --- МОДАЛКИ (Исправлено скрытие) ---
+    // --- МОДАЛКИ ---
     function openModal(id) { document.getElementById(id).classList.add('active'); }
     function closeModal(id) { document.getElementById(id).classList.remove('active'); }
 
@@ -239,7 +242,7 @@
         localStorage.setItem('vk_token', token);
         localStorage.setItem('vk_peer_id', peer);
         
-        document.getElementById('greetingName').innerText = `Привет, ${name}!`;
+        document.getElementById('greetingName').innerText = 'Привет, ' + name + '!';
 
         if(!token) { alert('Введите VK Токен!'); return; }
         
@@ -248,14 +251,7 @@
         statusEl.innerText = 'Запрашиваем данные у ВКонтакте (Execute)...';
         btn.disabled = true;
 
-        // Execute-скрипт запрашивает сразу 300 последних сообщений за 1 сетевой вызов
-        const vkCode = `
-            var msgs = [];
-            msgs = msgs + API.messages.getHistory({"peer_id": ${peer}, "count": 100, "offset": 0}).items;
-            msgs = msgs + API.messages.getHistory({"peer_id": ${peer}, "count": 100, "offset": 100}).items;
-            msgs = msgs + API.messages.getHistory({"peer_id": ${peer}, "count": 100, "offset": 200}).items;
-            return msgs;
-        `;
+        const vkCode = 'var a=API.messages.getHistory({"peer_id":'+peer+',"count":100,"offset":0}).items;var b=API.messages.getHistory({"peer_id":'+peer+',"count":100,"offset":100}).items;return {"a":a,"b":b};';
 
         try {
             const response = await new Promise((resolve, reject) => {
@@ -267,15 +263,17 @@
                     if(data.error) reject(data.error); else resolve(data.response);
                 };
                 script.onerror = () => reject(new Error('Ошибка сети'));
-                script.src = `https://api.vk.com/method/execute?code=${encodeURIComponent(vkCode.replace(/\\s+/g, ' '))}&access_token=${encodeURIComponent(token)}&v=5.199&callback=${cbName}`;
+                script.src = 'https://api.vk.com/method/execute?code=' + encodeURIComponent(vkCode) + '&access_token=' + encodeURIComponent(token) + '&v=5.199&callback=' + cbName;
                 document.body.appendChild(script);
             });
 
-            if(!response || response.length === 0) {
+            const merged = [].concat(response.a || [], response.b || []);
+
+            if(merged.length === 0) {
                 statusEl.innerText = 'Сообщения не найдены.';
             } else {
-                statusEl.innerText = `Найдено ${response.length} сообщений. Анализируем...`;
-                parseMessagesList(response.map(m => m.text).filter(t => t));
+                statusEl.innerText = 'Найдено ' + merged.length + ' сообщений. Анализируем...';
+                parseMessagesList(merged.map(m => m.text).filter(t => t));
                 statusEl.innerText = 'Успешно!';
                 setTimeout(() => { closeModal('settingsModal'); renderOverview(); renderAnalyticsTab(); }, 1000);
             }
@@ -291,7 +289,7 @@
     function processManualPaste() {
         const text = document.getElementById('inpText').value;
         if(!text) return;
-        const lines = text.split('\\n');
+        const lines = text.split('\n');
         parseMessagesList(lines);
         closeModal('pasteModal');
         renderOverview();
@@ -303,12 +301,11 @@
         let newTxs = [];
         texts.forEach(text => {
             if(!text) return;
-            // Ищем сумму и место. Формат Альфы или Сбера.
-            const match = text.match(/(?:Покупка|Оплата|Списание).*?([\\d\\s]+(?:\\.\\d+)?)\\s*[₽р]\\.?\\s*(?:в|на)?\\s*([^\\n]+)/i) ||
-                          text.match(/([\\d\\s]+(?:\\.\\d+)?)\\s*[₽р].*?(?:МСС|Покупка)\\s*([^\\n]+)/i);
+            const match = text.match(/(?:Покупка|Оплата|Списание).*?([\d\s]+(?:\.\d+)?)\s*[₽р]\.?\s*(?:в|на)?\s*([^\n]+)/i) ||
+                          text.match(/([\d\s]+(?:\.\d+)?)\s*[₽р].*?(?:МСС|Покупка)\s*([^\n]+)/i);
             
             if(match) {
-                const amount = parseFloat(match[1].replace(/\\s/g, ''));
+                const amount = parseFloat(match[1].replace(/\s/g, ''));
                 let merchant = match[2].split('Баланс')[0].split('Карта')[0].trim();
                 
                 let cat = 'Другое';
@@ -324,17 +321,16 @@
                     amount: amount,
                     merchant: merchant,
                     category: cat,
-                    date: new Date().toISOString() // Упрощенно берем текущую дату парсинга
+                    date: new Date().toISOString()
                 });
             }
         });
 
         if(newTxs.length > 0) {
-            transactions = [...newTxs, ...transactions]; // Новые сверху
-            // Убираем дубликаты по сумме и месту для простоты демо
+            transactions = [].concat(newTxs, transactions);
             transactions = transactions.filter((v,i,a)=>a.findIndex(t=>(t.amount===v.amount && t.merchant===v.merchant))===i);
             localStorage.setItem('dzyn_txs', JSON.stringify(transactions));
-            alert(`Добавлено новых операций: ${newTxs.length}`);
+            alert('Добавлено новых операций: ' + newTxs.length);
         }
     }
 
@@ -350,27 +346,15 @@
             total += tx.amount;
             catTotals[tx.category] = (catTotals[tx.category] || 0) + tx.amount;
             
-            if(i < 15) { // Показываем последние 15
+            if(i < 15) {
                 const icon = categoryIcons[tx.category] || categoryIcons['Другое'];
-                listHTML += \`
-                    <div class="transaction-item">
-                        <div class="tx-left">
-                            <div class="tx-icon">\${icon}</div>
-                            <div class="tx-details">
-                                <span class="tx-title">\${tx.merchant}</span>
-                                <span class="tx-date">\${tx.category}</span>
-                            </div>
-                        </div>
-                        <div class="tx-amount">-\${tx.amount.toLocaleString('ru-RU')} ₽</div>
-                    </div>
-                \`;
+                listHTML += '<div class="transaction-item"><div class="tx-left"><div class="tx-icon">' + icon + '</div><div class="tx-details"><span class="tx-title">' + tx.merchant + '</span><span class="tx-date">' + tx.category + '</span></div></div><div class="tx-amount">-' + tx.amount.toLocaleString('ru-RU') + ' ₽</div></div>';
             }
         });
 
-        document.getElementById('mainTotal').innerText = \`\${total.toLocaleString('ru-RU')} ₽\`;
+        document.getElementById('mainTotal').innerText = total.toLocaleString('ru-RU') + ' ₽';
         document.getElementById('txList').innerHTML = listHTML;
 
-        // График Chart.js
         const ctx = document.getElementById('categoryChart').getContext('2d');
         if(myChart) myChart.destroy();
         
@@ -391,9 +375,7 @@
                 responsive: true,
                 maintainAspectRatio: false,
                 cutout: '75%',
-                plugins: {
-                    legend: { position: 'right', labels: { color: '#fff', boxWidth: 12, font: {size: 11} } }
-                }
+                plugins: { legend: { position: 'right', labels: { color: '#fff', boxWidth: 12, font: {size: 11} } } }
             }
         });
     }
@@ -406,7 +388,6 @@
             return;
         }
 
-        // Собираем уникальные категории и считаем их суммы
         let catTotals = {};
         transactions.forEach(tx => {
             catTotals[tx.category] = (catTotals[tx.category] || 0) + tx.amount;
@@ -416,16 +397,10 @@
         Object.keys(catTotals).sort((a,b) => catTotals[b] - catTotals[a]).forEach(cat => {
             const sum = catTotals[cat];
             const isTarget = ['Фастфуд', 'Игры и Софт', 'Подписки и Сервисы', 'Развлечения'].includes(cat);
-            // По умолчанию ставим галочки на "необязательных" тратах
-            html += \`
-                <div class="filter-item">
-                    <input type="checkbox" class="cat-filter" value="\${cat}" data-sum="\${sum}" \${isTarget ? 'checked' : ''} onchange="calculateSavings()">
-                    <label>
-                        <span>\${categoryIcons[cat] || '💳'} \${cat}</span>
-                        <span style="font-weight:bold;">\${sum.toLocaleString('ru-RU')} ₽</span>
-                    </label>
-                </div>
-            \`;
+            const icon = categoryIcons[cat] || '💳';
+            const checkedAttr = isTarget ? 'checked' : '';
+            
+            html += '<div class="filter-item"><input type="checkbox" class="cat-filter" value="' + cat + '" data-sum="' + sum + '" ' + checkedAttr + ' onchange="calculateSavings()"><label><span>' + icon + ' ' + cat + '</span><span style="font-weight:bold;">' + sum.toLocaleString('ru-RU') + ' ₽</span></label></div>';
         });
         filterList.innerHTML = html;
         calculateSavings();
@@ -441,11 +416,11 @@
             selectedCats.push(cb.value);
         });
 
-        document.getElementById('savingsAmount').innerText = \`+ \${potentialSavings.toLocaleString('ru-RU')} ₽\`;
+        document.getElementById('savingsAmount').innerText = '+ ' + potentialSavings.toLocaleString('ru-RU') + ' ₽';
         
         let tip = 'Отметьте категории галочками.';
         if(potentialSavings > 0) {
-            tip = \`Отказ от категорий: <b>\${selectedCats.join(', ')}</b> сохранит вам \${potentialSavings.toLocaleString('ru-RU')} рублей. \`;
+            tip = 'Отказ от категорий: <b>' + selectedCats.join(', ') + '</b> сохранит вам ' + potentialSavings.toLocaleString('ru-RU') + ' рублей. ';
             if(selectedCats.includes('Фастфуд')) tip += '<br>🍔 <i>Совет: готовка дома обходится в среднем в 3 раза дешевле.</i>';
             if(selectedCats.includes('Игры и Софт')) tip += '<br>🎮 <i>Совет: отложите виртуальные покупки на пару недель, желание часто пропадает.</i>';
         }
