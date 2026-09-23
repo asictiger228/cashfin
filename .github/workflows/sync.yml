@@ -1,0 +1,37 @@
+name: Sync VK Transactions
+
+on:
+  schedule:
+    - cron: '0 * * * *' # Запуск каждый час (автоматически)
+  workflow_dispatch: # Запуск вручную по кнопке
+
+jobs:
+  update-data:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Скачивание репозитория
+        uses: actions/checkout@v3
+
+      - name: Установка Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Установка библиотек
+        run: pip install requests
+
+      - name: Запуск парсера ВК
+        env:
+          VK_TOKEN: ${{ secrets.VK_TOKEN }}
+        run: python sync.py
+
+      - name: Сохранение новых чеков на сайт
+        run: |
+          git config --local user.name "github-actions[bot]"
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git add data.json
+          git diff --quiet && git diff --staged --quiet || git commit -m "Авто-обновление чеков из ВК"
+          git push
