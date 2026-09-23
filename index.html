@@ -1,1113 +1,457 @@
 <!DOCTYPE html>
-<html lang="ru" class="dark">
+<html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="theme-color" content="#000000">
-  <title>Дзынь Финансы</title>
-
-  <!-- Tailwind CSS CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          colors: {
-            brand: {
-              red: '#EF3124',
-              redHover: '#D92215',
-              dark: '#0B0B0C',
-              card: '#161618',
-              cardSub: '#202023',
-              cardBorder: 'rgba(255, 255, 255, 0.08)',
-              green: '#30D158',
-              blue: '#0A84FF',
-              orange: '#FF9F0A',
-              purple: '#BF5AF2'
-            }
-          },
-          fontFamily: {
-            sans: ['-apple-system', 'BlinkMacSystemFont', '"SF Pro Display"', '"SF Pro Text"', 'Inter', 'sans-serif']
-          }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Дзынь Финансы</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --alfa-red: #EF3124;
+            --bg-color: #000000;
+            --card-bg: #1c1c1e;
+            --text-main: #ffffff;
+            --text-muted: #8e8e93;
+            --safe-area-bottom: env(safe-area-inset-bottom, 20px);
         }
-      }
-    }
-  </script>
 
-  <!-- Chart.js and Lucide Icons -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-  <script src="https://unpkg.com/lucide@latest"></script>
-
-  <style>
-    :root {
-      --sat: env(safe-area-inset-top, 0px);
-      --sab: env(safe-area-inset-bottom, 0px);
-    }
-    body {
-      background-color: #000000;
-      color: #F2F2F7;
-      padding-top: var(--sat);
-      padding-bottom: calc(var(--sab) + 84px);
-      -webkit-tap-highlight-color: transparent;
-      user-select: none;
-      -webkit-user-select: none;
-      font-feature-settings: "cv02", "cv03", "cv04", "cv11";
-    }
-    .glass-header {
-      background: rgba(18, 18, 20, 0.78);
-      backdrop-filter: blur(28px) saturate(190%);
-      -webkit-backdrop-filter: blur(28px) saturate(190%);
-      border-bottom: 0.5px solid rgba(255, 255, 255, 0.12);
-    }
-    .glass-nav {
-      background: rgba(14, 14, 16, 0.85);
-      backdrop-filter: blur(32px) saturate(210%);
-      -webkit-backdrop-filter: blur(32px) saturate(210%);
-      border-top: 0.5px solid rgba(255, 255, 255, 0.12);
-    }
-    .card-glass {
-      background: rgba(22, 22, 25, 0.85);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      border: 0.5px solid rgba(255, 255, 255, 0.08);
-      box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.7);
-    }
-    .tap-scale {
-      transition: transform 0.12s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.12s ease;
-    }
-    .tap-scale:active {
-      transform: scale(0.96);
-      opacity: 0.85;
-    }
-    .no-scrollbar::-webkit-scrollbar {
-      display: none;
-    }
-    .no-scrollbar {
-      -ms-overflow-style: none;
-      scrollbar-width: none;
-    }
-    input, textarea {
-      user-select: auto !important;
-      -webkit-user-select: auto !important;
-    }
-  </style>
-</head>
-<body class="antialiased min-h-screen flex flex-col">
-
-  <header class="sticky top-0 z-40 glass-header px-4 py-3 flex items-center justify-between">
-    <div class="flex items-center gap-2.5">
-      <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-brand-red to-orange-500 flex items-center justify-center shadow-lg shadow-brand-red/30">
-        <i data-lucide="bell-ring" class="w-4 h-4 text-white"></i>
-      </div>
-      <div>
-        <h1 class="text-base font-bold tracking-tight flex items-center gap-1 leading-none">
-          Дзынь <span class="text-brand-red">Финансы</span>
-        </h1>
-        <p class="text-[10px] text-white/40 font-medium tracking-wide mt-0.5" id="headerSubtitle">Альфа-Банк &bull; ВК Уведомления</p>
-      </div>
-    </div>
-
-    <div class="flex items-center gap-2">
-      <button id="btnQuickPasteModal" class="tap-scale px-2.5 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 text-white/80 text-xs font-medium flex items-center gap-1.5 border border-white/5">
-        <i data-lucide="clipboard-paste" class="w-3.5 h-3.5 text-brand-red"></i>
-        <span>Вставить</span>
-      </button>
-      <div id="statusPill" class="text-[10px] font-semibold px-2.5 py-1 rounded-full bg-white/5 border border-white/10 text-white/60">
-        Готов
-      </div>
-    </div>
-  </header>
-
-  <main class="flex-1 w-full max-w-lg mx-auto p-4 space-y-5">
-
-    <!-- VIEW 1: ОБЗОР (DASHBOARD) -->
-    <section id="view-dashboard" class="app-view space-y-5">
-      <!-- Main Metric Balance Banner -->
-      <div class="card-glass rounded-[28px] p-5 relative overflow-hidden">
-        <div class="absolute -right-8 -top-8 w-40 h-40 bg-brand-red/20 blur-3xl rounded-full pointer-events-none"></div>
-        <div class="flex justify-between items-start mb-2">
-          <div>
-            <span class="text-xs font-medium text-white/50 uppercase tracking-wider" id="dashHeroPeriodLabel">Сентябрь 2026</span>
-            <h2 class="text-4xl font-extrabold tracking-tight mt-0.5 text-white" id="dashTotalSpent">0 ₽</h2>
-          </div>
-          <span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-brand-red/15 text-brand-red border border-brand-red/30">
-            Alfa Дзынь
-          </span>
-        </div>
-
-        <div class="grid grid-cols-2 gap-3 mt-4 pt-4 border-t border-white/10">
-          <div class="bg-black/30 rounded-2xl p-3 border border-white/5">
-            <span class="text-[11px] text-white/40 block mb-0.5">Сегодня потрачено</span>
-            <span class="text-base font-bold text-white" id="dashSpentToday">0 ₽</span>
-          </div>
-          <div class="bg-black/30 rounded-2xl p-3 border border-white/5">
-            <span class="text-[11px] text-white/40 block mb-0.5">Средний чек</span>
-            <span class="text-base font-bold text-white" id="dashAvgCheck">0 ₽</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Quick Chart Switcher & Graph -->
-      <div class="card-glass rounded-[26px] p-4 space-y-3">
-        <div class="flex items-center justify-between">
-          <span class="text-xs font-bold uppercase tracking-wider text-white/70">Динамика расходов</span>
-          <span class="text-[11px] text-brand-red font-semibold" id="dashChartMetaLabel">Сентябрь</span>
-        </div>
-        <div class="h-44 w-full relative">
-          <canvas id="dashboardChart"></canvas>
-        </div>
-      </div>
-
-      <!-- Top Spending Donut Chart & Category summary -->
-      <div class="card-glass rounded-[26px] p-4 space-y-4">
-        <div class="flex items-center justify-between">
-          <span class="text-xs font-bold uppercase tracking-wider text-white/70">Категории сентября</span>
-          <span class="text-[11px] text-white/40" id="dashCategoryCountLabel">0 категорий</span>
-        </div>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-tap-highlight-color: transparent; }
+        body { background-color: var(--bg-color); color: var(--text-main); overscroll-behavior-y: none; }
         
-        <div class="flex flex-col sm:flex-row items-center gap-4">
-          <div class="w-36 h-36 relative shrink-0">
-            <canvas id="categoryDonutChart"></canvas>
-          </div>
-          <div class="w-full flex-1 space-y-2.5" id="dashCategoryBars">
-            <!-- Injected category progress bars -->
-          </div>
+        .app-container { max-width: 500px; margin: 0 auto; height: 100vh; display: flex; flex-direction: column; position: relative; background: var(--bg-color); }
+        
+        /* Header */
+        .header { display: flex; justify-content: space-between; align-items: center; padding: 20px 20px 10px; background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); position: sticky; top: 0; z-index: 10; }
+        .header-title { font-size: 24px; font-weight: 800; display: flex; flex-direction: column; }
+        .header-title span { font-size: 13px; color: var(--text-muted); font-weight: 500; margin-top: 2px; }
+        .header-actions { display: flex; gap: 10px; }
+        .btn-icon { background: var(--card-bg); border: none; color: var(--text-main); width: 36px; height: 36px; border-radius: 18px; font-size: 16px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+        
+        /* Main Content */
+        .content { flex: 1; overflow-y: auto; padding: 15px 20px 100px; }
+        .view-section { display: none; }
+        .view-section.active { display: block; animation: fadeIn 0.3s ease; }
+        
+        /* Cards */
+        .card { background: var(--card-bg); border-radius: 20px; padding: 20px; margin-bottom: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
+        .card.red-glow { border: 1px solid rgba(239, 49, 36, 0.2); background: linear-gradient(145deg, #1c1c1e 0%, #2a1111 100%); }
+        .total-balance { font-size: 38px; font-weight: 800; margin: 10px 0; }
+        
+        /* List */
+        .transaction-list { display: flex; flex-direction: column; gap: 15px; margin-top: 10px; }
+        .transaction-item { display: flex; justify-content: space-between; align-items: center; }
+        .tx-left { display: flex; align-items: center; gap: 12px; }
+        .tx-icon { width: 40px; height: 40px; border-radius: 12px; background: rgba(255,255,255,0.1); display: flex; justify-content: center; align-items: center; font-size: 20px; }
+        .tx-details { display: flex; flex-direction: column; }
+        .tx-title { font-size: 16px; font-weight: 600; }
+        .tx-date { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+        .tx-amount { font-size: 16px; font-weight: 700; }
+        
+        /* Analytics Tab */
+        .filter-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+        .filter-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; background: rgba(255,255,255,0.05); border-radius: 12px; }
+        .filter-item label { flex: 1; margin-left: 10px; font-size: 16px; cursor: pointer; display: flex; justify-content: space-between; align-items: center;}
+        input[type="checkbox"] { accent-color: var(--alfa-red); width: 20px; height: 20px; }
+        .forecast-box { background: rgba(239, 49, 36, 0.15); padding: 20px; border-radius: 16px; border: 1px solid rgba(239, 49, 36, 0.3); text-align: center; }
+        .forecast-amount { font-size: 28px; font-weight: bold; color: var(--alfa-red); margin: 10px 0; }
+        .smart-tip { font-size: 14px; color: #ffcccc; margin-top: 10px; line-height: 1.4; }
+
+        /* Chart */
+        .chart-container { position: relative; height: 220px; width: 100%; margin: 10px 0; }
+        
+        /* Modals (Fixed!) */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); backdrop-filter: blur(5px); z-index: 1000; justify-content: center; align-items: center; padding: 20px; }
+        .modal-overlay.active { display: flex; }
+        .modal-content { background: var(--card-bg); width: 100%; max-width: 400px; border-radius: 24px; padding: 24px; }
+        .modal-title { font-size: 20px; font-weight: 700; margin-bottom: 15px; }
+        .input-field { width: 100%; background: #000; border: 1px solid #333; color: white; padding: 14px; border-radius: 12px; margin-bottom: 12px; font-size: 16px; outline: none; }
+        .input-field:focus { border-color: var(--alfa-red); }
+        .btn { width: 100%; padding: 16px; border-radius: 12px; border: none; font-size: 16px; font-weight: 600; cursor: pointer; margin-bottom: 10px; transition: 0.2s; }
+        .btn-primary { background: var(--alfa-red); color: white; }
+        .btn-secondary { background: #333; color: white; }
+        .btn:active { transform: scale(0.98); }
+
+        /* Bottom Nav */
+        .bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 500px; background: rgba(28, 28, 30, 0.9); backdrop-filter: blur(20px); border-top: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-around; padding: 10px 0 var(--safe-area-bottom); z-index: 100; }
+        .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; color: var(--text-muted); font-size: 11px; font-weight: 500; text-decoration: none; cursor: pointer; }
+        .nav-item.active { color: var(--alfa-red); }
+        .nav-icon { font-size: 24px; margin-bottom: 4px; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <div class="header">
+        <div class="header-title">
+            Дзынь Финансы
+            <span id="greetingName">Привет, Асрорбек!</span>
         </div>
-      </div>
-
-      <!-- Recent Transactions List -->
-      <div class="space-y-3">
-        <div class="flex items-center justify-between px-1">
-          <h3 class="text-sm font-bold tracking-tight text-white/90">Последние покупки</h3>
-          <span class="text-xs text-white/40" id="dashTxCount">0 операций</span>
+        <div class="header-actions">
+            <button class="btn-icon" onclick="openModal('pasteModal')">📋</button>
+            <button class="btn-icon" onclick="openModal('settingsModal')">⚙️</button>
         </div>
-        <div id="dashTxList" class="space-y-2">
-          <!-- Injected transaction cards -->
-        </div>
-      </div>
-    </section>
-
-    <!-- VIEW 2: ПО МЕСЯЦАМ (MONTHS) -->
-    <section id="view-months" class="app-view space-y-5 hidden">
-      <!-- Horizontal Month Selector -->
-      <div class="flex gap-2 overflow-x-auto no-scrollbar py-1" id="monthsSelector">
-        <!-- Rendered month pills -->
-      </div>
-
-      <!-- Monthly Summary Card -->
-      <div class="card-glass rounded-[28px] p-5 space-y-4">
-        <div class="flex justify-between items-start">
-          <div>
-            <span class="text-[11px] font-medium text-white/50 uppercase tracking-wider" id="selectedMonthName">Сентябрь 2026</span>
-            <h2 class="text-3xl font-extrabold tracking-tight mt-1" id="monthTotalAmount">0 ₽</h2>
-          </div>
-          <div class="text-right">
-            <span class="text-[10px] text-white/40 block">Всего операций</span>
-            <span class="text-base font-bold text-brand-red" id="monthTotalTxCount">0</span>
-          </div>
-        </div>
-
-        <div class="p-3.5 bg-black/40 rounded-2xl border border-white/5 flex items-center justify-between text-xs">
-          <div class="flex items-center gap-2">
-            <i data-lucide="trending-down" class="w-4 h-4 text-brand-green" id="monthDeltaIcon"></i>
-            <span class="text-white/70" id="monthDeltaText">Динамика к августу: -12%</span>
-          </div>
-          <span class="font-bold text-brand-green" id="monthDeltaBadge">-4 120 ₽</span>
-        </div>
-      </div>
-
-      <!-- Weekly breakdown in selected month -->
-      <div class="card-glass rounded-[26px] p-4 space-y-3">
-        <h4 class="text-xs font-bold uppercase tracking-wider text-white/70">Траты по неделям</h4>
-        <div class="h-44 w-full">
-          <canvas id="monthlyWeeksChart"></canvas>
-        </div>
-      </div>
-
-      <!-- Transactions in selected month -->
-      <div class="space-y-2.5">
-        <h4 class="text-xs font-bold uppercase tracking-wider text-white/70 px-1">Операции за месяц</h4>
-        <div id="monthTxList" class="space-y-2">
-          <!-- Injected month transaction cards -->
-        </div>
-      </div>
-    </section>
-
-    <!-- VIEW 3: ЭКОНОМИЯ (SAVINGS) -->
-    <section id="view-economy" class="app-view space-y-5 hidden">
-      <!-- Savings Hero Card -->
-      <div class="bg-gradient-to-br from-[#1C1628] via-brand-card to-[#121215] border border-brand-purple/20 card-glass rounded-[28px] p-5 space-y-3 relative overflow-hidden">
-        <div class="flex items-center gap-2 text-brand-purple">
-          <i data-lucide="sparkles" class="w-5 h-5"></i>
-          <span class="text-xs font-bold uppercase tracking-wider">Умный советник</span>
-        </div>
-        <h3 class="text-2xl font-black tracking-tight text-white">
-          Резерв экономии: <span class="text-brand-green" id="ecoTotalPotential">0 ₽</span>
-        </h3>
-        <p class="text-xs text-white/60 leading-relaxed">
-          Анализ импульсивных и регулярных трат: где утекает больше всего денег и как безболезненно сократить расходы в следующем месяце.
-        </p>
-      </div>
-
-      <!-- Peak days analysis -->
-      <div class="card-glass rounded-[26px] p-4.5 space-y-3">
-        <div class="flex items-center gap-2 text-brand-orange">
-          <i data-lucide="calendar" class="w-4 h-4"></i>
-          <h4 class="text-xs font-bold uppercase tracking-wider">Пиковые дни трат</h4>
-        </div>
-        <div class="p-3 bg-black/40 rounded-2xl border border-white/5 space-y-1.5" id="ecoPeakDayBox">
-          <!-- Injected peak days summary -->
-        </div>
-      </div>
-
-      <!-- Micro-expenses analysis -->
-      <div class="card-glass rounded-[26px] p-4.5 space-y-3.5">
-        <div class="flex items-center justify-between">
-          <div class="flex items-center gap-2 text-brand-red">
-            <i data-lucide="pie-chart" class="w-4 h-4"></i>
-            <h4 class="text-xs font-bold uppercase tracking-wider">Импульсивные категории</h4>
-          </div>
-          <span class="text-[11px] text-white/40">Фастфуд, игры, такси</span>
-        </div>
-        <div class="space-y-2.5" id="ecoMicroExpenses">
-          <!-- Injected micro spend breakdown -->
-        </div>
-      </div>
-
-      <!-- Actionable Advice Cards -->
-      <div class="space-y-3" id="ecoTipsList">
-        <!-- Injected advice list -->
-      </div>
-    </section>
-
-    <!-- VIEW 4: НАСТРОЙКИ (SETTINGS & SYNC) -->
-    <section id="view-settings" class="app-view space-y-5 hidden">
-      <!-- Sync Panel -->
-      <div class="card-glass rounded-[28px] p-5 space-y-4">
-        <div class="flex items-center gap-2.5">
-          <div class="w-8 h-8 rounded-xl bg-brand-red/20 text-brand-red flex items-center justify-center">
-            <i data-lucide="refresh-cw" class="w-4 h-4"></i>
-          </div>
-          <div>
-            <h3 class="text-base font-bold">Синхронизация VK API</h3>
-            <p class="text-[11px] text-white/50">Альфа-Банк «Дзынь» (ВКонтакте)</p>
-          </div>
-        </div>
-
-        <div class="space-y-3 text-xs">
-          <div>
-            <label class="block text-[11px] font-semibold text-white/60 mb-1 ml-1">VK ACCESS TOKEN</label>
-            <input type="password" id="inputVkToken" placeholder="vk1.a.XXXX..." class="w-full bg-black/60 border border-white/10 rounded-xl px-3.5 py-3 text-white placeholder-white/20 focus:outline-none focus:border-brand-red transition">
-          </div>
-
-          <div>
-            <label class="block text-[11px] font-semibold text-white/60 mb-1 ml-1">PEER ID ЧАТА С БАНКОМ</label>
-            <input type="text" id="inputVkPeerId" value="-218837624" placeholder="-218837624" class="w-full bg-black/60 border border-white/10 rounded-xl px-3.5 py-3 text-white placeholder-white/20 focus:outline-none focus:border-brand-red transition">
-            <p class="text-[10px] text-white/40 mt-1 ml-1">Диалог «Альфа-Банк Дзынь»: <span class="text-white/70">-218837624</span></p>
-          </div>
-        </div>
-
-        <!-- Sync Button -->
-        <button id="btnExecuteSync" class="tap-scale w-full py-3.5 bg-gradient-to-r from-brand-red to-red-600 rounded-xl font-bold text-sm text-white shadow-lg shadow-brand-red/30 flex items-center justify-center gap-2">
-          <i data-lucide="cloud-download" class="w-4 h-4" id="syncBtnIcon"></i>
-          <span id="syncBtnText">Загрузить с Сентября 2026</span>
-        </button>
-
-        <!-- Live Sync Terminal Log -->
-        <div class="bg-black/80 rounded-2xl p-3 border border-white/5 space-y-1">
-          <div class="flex items-center justify-between text-[10px] text-white/40 pb-1 border-b border-white/10">
-            <span>Журнал запросов (Safe Execute)</span>
-            <span id="logStatusText">Готов</span>
-          </div>
-          <div id="syncLogBox" class="h-28 overflow-y-auto text-[10px] font-mono text-emerald-400 space-y-1 pt-1 no-scrollbar">
-            <div>[Система] Загружены готовые данные. Нажмите «Загрузить» для свежего обновления из VK.</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Quick manual import backup -->
-      <div class="card-glass rounded-[28px] p-5 space-y-3">
-        <h4 class="text-sm font-bold flex items-center gap-2">
-          <i data-lucide="clipboard-copy" class="w-4 h-4 text-brand-orange"></i>
-          Ручной ввод / Вставка чеков
-        </h4>
-        <p class="text-xs text-white/60 leading-relaxed">
-          Если ВК блокирует приложение или у вас нет токена — просто скопируйте любые сообщения из чата «Дзынь» или SMS 900 и вставьте их сюда.
-        </p>
-        <button id="btnOpenPasteFromSettings" class="tap-scale w-full py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-xs font-semibold text-white/90 border border-white/10 flex items-center justify-center gap-2">
-          <i data-lucide="file-text" class="w-3.5 h-3.5"></i>
-          Открыть окно вставки текста
-        </button>
-      </div>
-
-      <!-- Helpful token instructions -->
-      <div class="card-glass rounded-[28px] p-5 space-y-3">
-        <h4 class="text-xs font-bold uppercase tracking-wider text-white/70">Где взять токен без Flood Control?</h4>
-        <ul class="text-xs text-white/60 space-y-2 list-disc list-inside">
-          <li>Откройте сервис токенов: <span class="text-brand-red font-mono">vkhost.github.io</span></li>
-          <li>Выберите <span class="text-white font-semibold">VK Me</span>, <span class="text-white font-semibold">Lollipop</span> или <span class="text-white font-semibold">VK Admin</span> (у них нет ограничений).</li>
-          <li>Скопируйте всё после <span class="text-white font-mono">access_token=</span>.</li>
-        </ul>
-      </div>
-
-      <!-- Clear & Reset Data -->
-      <div class="pt-2">
-        <button id="btnResetAll" class="tap-scale w-full py-3 text-xs font-medium text-white/40 hover:text-brand-red transition">
-          Сбросить все операции к исходным демо-данным
-        </button>
-      </div>
-    </section>
-
-  </main>
-
-  <!-- MODAL: MANUAL QUICK-PASTE -->
-  <div id="pasteModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-4 hidden">
-    <div class="card-glass w-full max-w-md bg-[#18181A] rounded-t-[32px] sm:rounded-[32px] p-5 space-y-4 border border-white/10">
-      <div class="flex justify-between items-center pb-2 border-b border-white/10">
-        <h3 class="text-base font-bold flex items-center gap-2">
-          <i data-lucide="receipt" class="w-4 h-4 text-brand-red"></i>
-          Вставка сообщений «Дзынь» / SMS
-        </h3>
-        <button id="btnClosePasteModal" class="p-1 rounded-full text-white/40 hover:text-white">
-          <i data-lucide="x" class="w-5 h-5"></i>
-        </button>
-      </div>
-
-      <p class="text-xs text-white/60">
-        Вставьте сюда текст одного или сразу нескольких сообщений подряд (из диалога ВКонтакте или SMS):
-      </p>
-
-      <textarea id="rawPasteInput" rows="6" placeholder="Покупка 450 ₽ в Вкусно и точка&#10;Оплата 1240 ₽ Место: Mori Cinema&#10;Списание 199 ₽ VK Music..." class="w-full bg-black border border-white/10 rounded-2xl p-3.5 text-xs text-white placeholder-white/20 focus:outline-none focus:border-brand-red leading-relaxed"></textarea>
-
-      <div class="flex gap-2.5">
-        <button id="btnProcessPaste" class="tap-scale flex-1 py-3 bg-brand-red hover:bg-brand-redHover rounded-xl font-bold text-xs text-white shadow-lg shadow-brand-red/30">
-          Распознать и сохранить
-        </button>
-      </div>
     </div>
-  </div>
 
-  <!-- BOTTOM TAB BAR (iOS STYLE) -->
-  <nav class="fixed bottom-0 left-0 right-0 glass-nav z-40" style="padding-bottom: var(--sab);">
-    <div class="flex justify-between items-center max-w-md mx-auto px-6 py-2">
-      <button class="nav-tab tap-scale flex flex-col items-center gap-1 text-brand-red" data-target="view-dashboard">
-        <i data-lucide="layout-grid" class="w-5 h-5"></i>
-        <span class="text-[10px] font-semibold">Обзор</span>
-      </button>
+    <div class="content">
+        <!-- Вкладка О Б З О Р -->
+        <div id="view-overview" class="view-section active">
+            <div class="card red-glow">
+                <div style="font-size: 14px; color: var(--text-muted);">Потрачено за всё время</div>
+                <div class="total-balance" id="mainTotal">0 ₽</div>
+                <div style="font-size: 13px; color: #ff8a80;">На основе загруженных данных</div>
+            </div>
+            
+            <div class="card">
+                <h3 style="margin-bottom: 15px; font-size: 18px;">Категории</h3>
+                <div class="chart-container">
+                    <canvas id="categoryChart"></canvas>
+                </div>
+            </div>
 
-      <button class="nav-tab tap-scale flex flex-col items-center gap-1 text-white/40 hover:text-white" data-target="view-months">
-        <i data-lucide="calendar" class="w-5 h-5"></i>
-        <span class="text-[10px] font-semibold">Месяцы</span>
-      </button>
+            <div class="card" style="padding: 0; background: transparent; box-shadow: none;">
+                <h3 style="margin-bottom: 10px; font-size: 18px; padding: 0 5px;">Последние операции</h3>
+                <div class="transaction-list" id="txList">
+                    <div style="text-align: center; padding: 20px; color: var(--text-muted);">
+                        Нет данных. Нажмите ⚙️ для синхронизации.
+                    </div>
+                </div>
+            </div>
+        </div>
 
-      <button class="nav-tab tap-scale flex flex-col items-center gap-1 text-white/40 hover:text-white" data-target="view-economy">
-        <i data-lucide="piggy-bank" class="w-5 h-5"></i>
-        <span class="text-[10px] font-semibold">Экономия</span>
-      </button>
+        <!-- Вкладка А Н А Л И Т И К А -->
+        <div id="view-analytics" class="view-section">
+            <div class="card">
+                <h3 style="margin-bottom: 10px;">Прогноз экономии</h3>
+                <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 15px;">Выберите категории, от которых вы готовы отказаться, чтобы узнать потенциальную экономию.</p>
+                
+                <div class="forecast-box">
+                    <div style="font-size: 14px; opacity: 0.9;">Вы могли бы сэкономить:</div>
+                    <div class="forecast-amount" id="savingsAmount">0 ₽</div>
+                    <div class="smart-tip" id="smartTip">Отметьте галочками категории ниже.</div>
+                </div>
+            </div>
 
-      <button class="nav-tab tap-scale flex flex-col items-center gap-1 text-white/40 hover:text-white" data-target="view-settings">
-        <i data-lucide="sliders-horizontal" class="w-5 h-5"></i>
-        <span class="text-[10px] font-semibold">Настройки</span>
-      </button>
+            <div class="card">
+                <h3 style="margin-bottom: 15px;">Фильтр категорий</h3>
+                <div class="filter-list" id="filterList">
+                    <!-- Галочки генерируются JS -->
+                </div>
+            </div>
+        </div>
     </div>
-  </nav>
 
-  <script>
-    // Lucide initialization helper
-    const refreshIcons = () => lucide && lucide.createIcons();
+    <!-- Модалка Настроек -->
+    <div class="modal-overlay" id="settingsModal">
+        <div class="modal-content">
+            <div class="modal-title">Настройки и Синхронизация</div>
+            <input type="text" id="inpName" class="input-field" placeholder="Ваше Имя (например, Асрорбек)">
+            <input type="text" id="inpToken" class="input-field" placeholder="VK Access Token">
+            <input type="text" id="inpPeer" class="input-field" placeholder="Peer ID (например, -218837624)">
+            
+            <button class="btn btn-primary" onclick="saveSettingsAndSync()" id="syncBtn">Сохранить и Загрузить (Execute)</button>
+            <div id="syncStatus" style="font-size: 12px; color: var(--text-muted); text-align: center; margin-bottom: 15px; min-height: 15px;"></div>
+            <button class="btn btn-secondary" onclick="closeModal('settingsModal')">Закрыть</button>
+        </div>
+    </div>
 
-    // September 1, 2026 UTC timestamp
-    const SEPTEMBER_2026_START = 1788220800;
+    <!-- Модалка Вставки Текста -->
+    <div class="modal-overlay" id="pasteModal">
+        <div class="modal-content">
+            <div class="modal-title">Вставить текст</div>
+            <textarea id="inpText" class="input-field" rows="6" placeholder="Вставьте сюда сообщения Дзынь или SMS от 900 пачкой..."></textarea>
+            <button class="btn btn-primary" onclick="processManualPaste()">Распознать</button>
+            <button class="btn btn-secondary" onclick="closeModal('pasteModal')">Отмена</button>
+        </div>
+    </div>
 
-    // Rich initial mock data for immediate user satisfaction
-    const DEFAULT_TRANSACTIONS = [
-      { id: 'tx_1', amount: 489, merchant: 'Вкусно и точка', category: 'Фастфуд', ts: 1789984800 },
-      { id: 'tx_2', amount: 1640, merchant: 'Пятёрочка', category: 'Супермаркеты', ts: 1789898400 },
-      { id: 'tx_3', amount: 560, merchant: 'Яндекс Go', category: 'Транспорт', ts: 1789812000 },
-      { id: 'tx_4', amount: 1250, merchant: 'Mori Cinema', category: 'Развлечения', ts: 1789725600 },
-      { id: 'tx_5', amount: 620, merchant: 'Burger King', category: 'Фастфуд', ts: 1789639200 },
-      { id: 'tx_6', amount: 890, merchant: 'Lis-skins', category: 'Игры', ts: 1789552800 },
-      { id: 'tx_7', amount: 199, merchant: 'VK Музыка', category: 'Подписки', ts: 1789466400 },
-      { id: 'tx_8', amount: 2840, merchant: 'Перекрёсток', category: 'Супермаркеты', ts: 1789380000 },
-      { id: 'tx_9', amount: 390, merchant: 'Додо Пицца', category: 'Фастфуд', ts: 1789293600 },
-      { id: 'tx_10', amount: 299, merchant: 'Яндекс Плюс', category: 'Подписки', ts: 1789207200 },
-      { id: 'tx_11', amount: 420, merchant: 'Кофе с собой', category: 'Фастфуд', ts: 1789120800 },
-      { id: 'tx_12', amount: 1450, merchant: 'Steam Games', category: 'Игры', ts: 1789034400 },
-      // Previous month mock (August 2026) for comparison analytics
-      { id: 'tx_prev_1', amount: 3200, merchant: 'Супермаркет Магнит', category: 'Супермаркеты', ts: 1787000000 },
-      { id: 'tx_prev_2', amount: 1850, merchant: 'Mori Cinema', category: 'Развлечения', ts: 1786500000 },
-      { id: 'tx_prev_3', amount: 950, merchant: 'Burger King', category: 'Фастфуд', ts: 1786200000 }
-    ];
+    <!-- Нижняя навигация -->
+    <div class="bottom-nav">
+        <div class="nav-item active" onclick="switchTab('overview', this)">
+            <div class="nav-icon">📊</div>
+            <span>Обзор</span>
+        </div>
+        <div class="nav-item" onclick="switchTab('analytics', this)">
+            <div class="nav-icon">💡</div>
+            <span>Аналитика</span>
+        </div>
+    </div>
+</div>
 
-    // Category dictionary & visual tokens
-    const CATEGORIES = {
-      'Фастфуд': { color: '#FF9F0A', icon: 'utensils', keywords: ['вкусно и точка', 'burger king', 'kfc', 'ростикс', 'додо', 'шаурма', 'кофе', 'макдоналдс', 'пицца', 'бургер'] },
-      'Супермаркеты': { color: '#EF3124', icon: 'shopping-cart', keywords: ['пятерочка', 'пятёрочка', 'магнит', 'перекресток', 'перекрёсток', 'лента', 'ашан', 'дикси', 'spar', 'вкусвилл'] },
-      'Транспорт': { color: '#0A84FF', icon: 'car', keywords: ['яндекс go', 'uber', 'такси', 'каршеринг', 'метро', 'азс', 'лукойл', 'газпром', 'ржд'] },
-      'Развлечения': { color: '#BF5AF2', icon: 'ticket', keywords: ['mori cinema', 'кино', 'royal forest', 'парк', 'билет', 'театр', 'боулинг', 'караоке'] },
-      'Игры': { color: '#30D158', icon: 'gamepad-2', keywords: ['lis-skins', 'steam', 'playstation', 'xbox', 'epic games', 'gog', 'донаты', 'игры'] },
-      'Подписки': { color: '#64D2FF', icon: 'repeat', keywords: ['vk music', 'vk музыка', 'яндекс плюс', 'яндекс', 'plus', 'spotify', 'apple', 'ivi', 'okko', 'кинопоиск'] },
-      'Прочее': { color: '#8E8E93', icon: 'tag', keywords: [] }
+<script>
+    // --- ДАННЫЕ И КАТЕГОРИИ ---
+    let transactions = JSON.parse(localStorage.getItem('dzyn_txs')) || [];
+    let myChart = null;
+    
+    // Карта ключевых слов (подстроена под популярные сервисы)
+    const categoryMap = {
+        'Фастфуд': ['вкусно', 'burger king', 'kfc', 'бургер', 'додо', 'пицца', 'шаурма'],
+        'Игры и Софт': ['lis-skins', 'majestic', 'steam', 'epic games', 'playstation', 'vk play'],
+        'Подписки и Сервисы': ['vk music', 'yandex', 'яндекс', 'подписка', 'pure', 'twinby', 'mamba', 'telegram', 'премиум'],
+        'Развлечения': ['mori cinema', 'кино', 'royal forest', 'парк', 'билет', 'афиша'],
+        'Супермаркеты': ['пятерочка', 'магнит', 'перекресток', 'ашан', 'лента', 'спар', 'вкусвилл'],
+        'Транспорт': ['яндекс.такси', 'такси', 'метро', 'ржд', 'авиа', 'автобус'],
+        'Маркетплейсы': ['ozon', 'wildberries', 'aliexpress', 'мегамаркет'],
+        'Переводы': ['перевод', 'пополнение', 'sbp', 'сбп']
     };
 
-    class FinanceManager {
-      constructor() {
-        this.txs = JSON.parse(localStorage.getItem('dzyn_txs') || 'null');
-        if (!this.txs) {
-          this.txs = DEFAULT_TRANSACTIONS;
-          localStorage.setItem('dzyn_txs', JSON.stringify(this.txs));
-        }
+    const categoryIcons = {
+        'Фастфуд': '🍔', 'Игры и Софт': '🎮', 'Подписки и Сервисы': '🎵',
+        'Развлечения': '🎬', 'Супермаркеты': '🛒', 'Транспорт': '🚕',
+        'Маркетплейсы': '🛍️', 'Переводы': '💸', 'Другое': '💳'
+    };
 
-        this.currentView = 'view-dashboard';
-        this.selectedMonthKey = '2026-08'; // 0-based month index string: 2026-08 is September
-        this.dashboardChart = null;
-        this.donutChart = null;
-        this.weeksChart = null;
+    // --- ИНИЦИАЛИЗАЦИЯ ---
+    window.onload = () => {
+        // Загрузка имени
+        const savedName = localStorage.getItem('vk_name') || 'Асрорбек';
+        document.getElementById('greetingName').innerText = `Привет, ${savedName}!`;
+        document.getElementById('inpName').value = savedName;
+        
+        document.getElementById('inpToken').value = localStorage.getItem('vk_token') || '';
+        document.getElementById('inpPeer').value = localStorage.getItem('vk_peer_id') || '-218837624';
+        
+        renderOverview();
+        renderAnalyticsTab();
+    };
 
-        this.initDOM();
-        this.renderAll();
-      }
+    // --- НАВИГАЦИЯ ---
+    function switchTab(tabId, element) {
+        document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+        
+        document.getElementById('view-' + tabId).classList.add('active');
+        element.classList.add('active');
+    }
 
-      initDOM() {
-        // Navigation setup
-        document.querySelectorAll('.nav-tab').forEach(btn => {
-          btn.addEventListener('click', (e) => {
-            const targetId = e.currentTarget.dataset.target;
-            this.switchView(targetId);
-          });
-        });
+    // --- МОДАЛКИ (Исправлено скрытие) ---
+    function openModal(id) { document.getElementById(id).classList.add('active'); }
+    function closeModal(id) { document.getElementById(id).classList.remove('active'); }
 
-        // Quick Paste Modal Listeners
-        const modal = document.getElementById('pasteModal');
-        const openModal = () => {
-          modal.classList.remove('hidden');
-          document.getElementById('rawPasteInput').focus();
-        };
-        const closeModal = () => modal.classList.add('hidden');
-
-        document.getElementById('btnQuickPasteModal').addEventListener('click', openModal);
-        document.getElementById('btnOpenPasteFromSettings').addEventListener('click', openModal);
-        document.getElementById('btnClosePasteModal').addEventListener('click', closeModal);
-
-        document.getElementById('btnProcessPaste').addEventListener('click', () => {
-          const raw = document.getElementById('rawPasteInput').value;
-          if (!raw.trim()) return;
-          this.parseManualText(raw);
-          document.getElementById('rawPasteInput').value = '';
-          closeModal();
-        });
-
-        // Settings actions
-        const savedToken = localStorage.getItem('vk_token') || '';
-        const savedPeer = localStorage.getItem('vk_peer_id') || '-218837624';
-        document.getElementById('inputVkToken').value = savedToken;
-        document.getElementById('inputVkPeerId').value = savedPeer;
-
-        document.getElementById('btnExecuteSync').addEventListener('click', () => this.syncVkWithExecute());
-
-        document.getElementById('btnResetAll').addEventListener('click', () => {
-          if (confirm('Сбросить все операции к изначальным демо-данным за сентябрь?')) {
-            this.txs = DEFAULT_TRANSACTIONS;
-            localStorage.setItem('dzyn_txs', JSON.stringify(this.txs));
-            this.renderAll();
-            this.log('Данные сброшены к начальным.');
-          }
-        });
-      }
-
-      switchView(viewId) {
-        this.currentView = viewId;
-        document.querySelectorAll('.app-view').forEach(v => v.classList.add('hidden'));
-        document.getElementById(viewId).classList.remove('hidden');
-
-        document.querySelectorAll('.nav-tab').forEach(tab => {
-          if (tab.dataset.target === viewId) {
-            tab.classList.add('text-brand-red');
-            tab.classList.remove('text-white/40');
-          } else {
-            tab.classList.remove('text-brand-red');
-            tab.classList.add('text-white/40');
-          }
-        });
-
-        // Trigger chart resizes if needed
-        if (viewId === 'view-dashboard') this.renderDashboardCharts();
-        if (viewId === 'view-months') this.renderMonthsView();
-        if (viewId === 'view-economy') this.renderEconomyView();
-
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      }
-
-      log(msg, type = 'info') {
-        const box = document.getElementById('syncLogBox');
-        const d = new Date().toLocaleTimeString();
-        const colorClass = type === 'error' ? 'text-brand-red' : (type === 'warn' ? 'text-amber-400' : 'text-emerald-400');
-        const entry = document.createElement('div');
-        entry.className = colorClass;
-        entry.textContent = `[${d}] ${msg}`;
-        box.prepend(entry);
-        document.getElementById('logStatusText').textContent = msg.slice(0, 24);
-      }
-
-      async syncVkWithExecute() {
-        const token = document.getElementById('inputVkToken').value.trim();
-        const peerId = document.getElementById('inputVkPeerId').value.trim() || '-218837624';
-
-        if (!token) {
-          alert('Введите VK Access Token в поле настроек.');
-          return;
-        }
-
+    // --- ВК СИНХРОНИЗАЦИЯ (Защита от флуда через execute) ---
+    async function saveSettingsAndSync() {
+        const name = document.getElementById('inpName').value.trim() || 'Асрорбек';
+        const token = document.getElementById('inpToken').value.trim();
+        const peer = document.getElementById('inpPeer').value.trim();
+        
+        localStorage.setItem('vk_name', name);
         localStorage.setItem('vk_token', token);
-        localStorage.setItem('vk_peer_id', peerId);
+        localStorage.setItem('vk_peer_id', peer);
+        
+        document.getElementById('greetingName').innerText = `Привет, ${name}!`;
 
-        const btn = document.getElementById('btnExecuteSync');
-        const icon = document.getElementById('syncBtnIcon');
+        if(!token) { alert('Введите VK Токен!'); return; }
+        
+        const statusEl = document.getElementById('syncStatus');
+        const btn = document.getElementById('syncBtn');
+        statusEl.innerText = 'Запрашиваем данные у ВКонтакте (Execute)...';
         btn.disabled = true;
-        btn.classList.add('opacity-75');
-        icon.classList.add('animate-spin');
 
-        this.log('Подготовка атомарного запроса VK API (без циклов)...');
-        document.getElementById('statusPill').textContent = 'Синхронизация...';
+        // Execute-скрипт запрашивает сразу 300 последних сообщений за 1 сетевой вызов
+        const vkCode = `
+            var msgs = [];
+            msgs = msgs + API.messages.getHistory({"peer_id": ${peer}, "count": 100, "offset": 0}).items;
+            msgs = msgs + API.messages.getHistory({"peer_id": ${peer}, "count": 100, "offset": 100}).items;
+            msgs = msgs + API.messages.getHistory({"peer_id": ${peer}, "count": 100, "offset": 200}).items;
+            return msgs;
+        `;
 
         try {
-          // Single execute code that queries up to 100 messages in one atomic shot on VK servers
-          const vkCode = `
-            var hist = API.messages.getHistory({"peer_id": ${peerId}, "count": 100});
-            return hist;
-          `;
-
-          let responseData = null;
-
-          try {
-            responseData = await this.jsonpVk('execute', {
-              code: vkCode.replace(/\s+/g, ' '),
-              access_token: token,
-              v: '5.199'
+            const response = await new Promise((resolve, reject) => {
+                const cbName = 'vk_exec_' + Date.now();
+                const script = document.createElement('script');
+                window[cbName] = (data) => {
+                    delete window[cbName];
+                    script.remove();
+                    if(data.error) reject(data.error); else resolve(data.response);
+                };
+                script.onerror = () => reject(new Error('Ошибка сети'));
+                script.src = `https://api.vk.com/method/execute?code=${encodeURIComponent(vkCode.replace(/\\s+/g, ' '))}&access_token=${encodeURIComponent(token)}&v=5.199&callback=${cbName}`;
+                document.body.appendChild(script);
             });
-          } catch (execErr) {
-            this.log('VK execute ограничен, переключаемся на прямой messages.getHistory...', 'warn');
-            responseData = await this.jsonpVk('messages.getHistory', {
-              peer_id: peerId,
-              count: 100,
-              access_token: token,
-              v: '5.199'
-            });
-          }
 
-          if (!responseData || !responseData.items || responseData.items.length === 0) {
-            this.log('Сообщений не обнаружено. Проверьте Peer ID.', 'warn');
-            alert('Сообщений в данном диалоге не найдено.');
-            return;
-          }
-
-          this.log(`Получено ${responseData.items.length} сообщений. Начинаем парсинг...`);
-
-          let added = 0;
-          responseData.items.forEach(item => {
-            const parsed = this.extractTransaction(item.text, item.date);
-            if (parsed) {
-              const exists = this.txs.some(t => Math.abs(t.ts - parsed.ts) < 2 && t.amount === parsed.amount);
-              if (!exists) {
-                this.txs.push(parsed);
-                added++;
-              }
-            }
-          });
-
-          this.txs.sort((a, b) => b.ts - a.ts);
-          localStorage.setItem('dzyn_txs', JSON.stringify(this.txs));
-
-          this.log(`Успешно! Добавлено новых чеков: ${added}. Всего: ${this.txs.length}.`);
-          document.getElementById('statusPill').textContent = `Обновлено: ${this.txs.length}`;
-
-          this.renderAll();
-          alert(`Синхронизация успешна!\nДобавлено новых чеков «Дзынь»: ${added}`);
-
-        } catch (err) {
-          console.error(err);
-          this.log(`Ошибка: ${err.message || 'Сбой запроса'}`, 'error');
-          if (err.message && err.message.toLowerCase().includes('flood')) {
-            alert('VK вернул Flood Control на данный токен.\n\nРешение:\n1. Получите токен через "VK Me" или "VK Admin" на vkhost.github.io\n2. Либо просто воспользуйтесь кнопкой «Вставить» вверху экрана!');
-          } else {
-            alert(`Ошибка VK API: ${err.message || 'Не удалось выполнить запрос'}`);
-          }
-        } finally {
-          btn.disabled = false;
-          btn.classList.remove('opacity-75');
-          icon.classList.remove('animate-spin');
-        }
-      }
-
-      jsonpVk(method, params) {
-        return new Promise((resolve, reject) => {
-          const cbName = 'vk_cb_' + Date.now() + '_' + Math.floor(Math.random() * 10000);
-          params.callback = cbName;
-
-          const query = Object.keys(params)
-            .map(k => `${k}=${encodeURIComponent(params[k])}`)
-            .join('&');
-
-          const script = document.createElement('script');
-          script.src = `https://api.vk.com/method/${method}?${query}`;
-
-          const cleanup = () => {
-            delete window[cbName];
-            if (script.parentNode) script.parentNode.removeChild(script);
-          };
-
-          window[cbName] = (res) => {
-            cleanup();
-            if (res.error) {
-              reject(new Error(res.error.error_msg || `VK Error Code ${res.error.error_code}`));
+            if(!response || response.length === 0) {
+                statusEl.innerText = 'Сообщения не найдены.';
             } else {
-              resolve(res.response);
+                statusEl.innerText = `Найдено ${response.length} сообщений. Анализируем...`;
+                parseMessagesList(response.map(m => m.text).filter(t => t));
+                statusEl.innerText = 'Успешно!';
+                setTimeout(() => { closeModal('settingsModal'); renderOverview(); renderAnalyticsTab(); }, 1000);
             }
-          };
-
-          script.onerror = () => {
-            cleanup();
-            reject(new Error('Сетевой сбой при обращении к vk.com'));
-          };
-
-          document.body.appendChild(script);
-        });
-      }
-
-      extractTransaction(text, timestamp) {
-        if (!text || typeof text !== 'string') return null;
-
-        // Clean & match amounts: "Покупка 450 ₽", "Списание 1,200.50 руб", "Оплата 340р"
-        const amountMatch = text.match(/(?:покупка|оплата|списание|перевод|чек|трата)[^0-9]*(\d+(?:[.,]\d{1,2})?)\s*(?:₽|руб|р|rub)/i);
-        if (!amountMatch) return null;
-
-        const amount = parseFloat(amountMatch[1].replace(',', '.'));
-        if (isNaN(amount) || amount <= 0) return null;
-
-        // Merchant extraction
-        let merchant = 'Торговая точка';
-        const merchInMatch = text.match(/(?:в|место:)\s+([A-Za-zА-Яа-я0-9\s._-]+?)(?:\.|\n|баланс|карта|остаток|$)/i);
-        if (merchInMatch && merchInMatch[1].trim().length > 1) {
-          merchant = merchInMatch[1].trim();
+        } catch(err) {
+            statusEl.innerText = 'Ошибка: ' + (err.error_msg || err.message);
+            if(err.error_code === 9) alert('ВК временно заблокировал токен. Подождите 5 минут или используйте ручную вставку 📋');
+        } finally {
+            btn.disabled = false;
         }
+    }
 
-        // Determine category
-        const category = this.categorize(merchant + ' ' + text);
+    // --- ПАРСЕР ---
+    function processManualPaste() {
+        const text = document.getElementById('inpText').value;
+        if(!text) return;
+        const lines = text.split('\\n');
+        parseMessagesList(lines);
+        closeModal('pasteModal');
+        renderOverview();
+        renderAnalyticsTab();
+        document.getElementById('inpText').value = '';
+    }
 
-        return {
-          id: 'tx_' + (timestamp || Date.now()) + '_' + Math.floor(Math.random() * 1000),
-          amount: Math.round(amount),
-          merchant: merchant,
-          category: category,
-          ts: timestamp || Math.floor(Date.now() / 1000)
-        };
-      }
-
-      categorize(str) {
-        const lower = str.toLowerCase();
-        for (const [catName, meta] of Object.entries(CATEGORIES)) {
-          if (meta.keywords.some(kw => lower.includes(kw))) {
-            return catName;
-          }
-        }
-        return 'Прочее';
-      }
-
-      parseManualText(raw) {
-        const lines = raw.split(/\n+/);
-        let added = 0;
-        lines.forEach(line => {
-          const t = this.extractTransaction(line, Math.floor(Date.now() / 1000));
-          if (t) {
-            this.txs.unshift(t);
-            added++;
-          }
-        });
-        localStorage.setItem('dzyn_txs', JSON.stringify(this.txs));
-        this.renderAll();
-        alert(`Распознано и добавлено операций: ${added}`);
-      }
-
-      renderAll() {
-        this.renderDashboard();
-        this.renderMonthsView();
-        this.renderEconomyView();
-        refreshIcons();
-      }
-
-      formatCurrency(num) {
-        return new Intl.NumberFormat('ru-RU').format(Math.round(num)) + ' ₽';
-      }
-
-      renderDashboard() {
-        // Filter September 2026 data
-        const septemberTxs = this.txs.filter(t => {
-          const d = new Date(t.ts * 1000);
-          return d.getFullYear() === 2026 && d.getMonth() === 8; // Month 8 is September
-        });
-
-        // If no September transactions, fallback to recent 30 days
-        const activeTxs = septemberTxs.length > 0 ? septemberTxs : this.txs;
-
-        const total = activeTxs.reduce((sum, t) => sum + t.amount, 0);
-        document.getElementById('dashTotalSpent').textContent = this.formatCurrency(total);
-        document.getElementById('dashTxCount').textContent = `${activeTxs.length} операций`;
-
-        // Today spend calculation (September 23, 2026 reference)
-        const todayTxs = activeTxs.filter(t => {
-          const d = new Date(t.ts * 1000);
-          return d.getDate() === 23 && d.getMonth() === 8 && d.getFullYear() === 2026;
-        });
-        const todayTotal = todayTxs.reduce((s, t) => s + t.amount, 0);
-        document.getElementById('dashSpentToday').textContent = this.formatCurrency(todayTotal);
-
-        const avg = activeTxs.length ? Math.round(total / activeTxs.length) : 0;
-        document.getElementById('dashAvgCheck').textContent = this.formatCurrency(avg);
-
-        // Render recent list
-        const listEl = document.getElementById('dashTxList');
-        listEl.innerHTML = '';
-
-        if (this.txs.length === 0) {
-          listEl.innerHTML = '<div class="text-center py-6 text-xs text-white/40">Нет зарегистрированных трат</div>';
-        } else {
-          this.txs.slice(0, 10).forEach(t => {
-            const meta = CATEGORIES[t.category] || CATEGORIES['Прочее'];
-            const dateStr = new Date(t.ts * 1000).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
+    function parseMessagesList(texts) {
+        let newTxs = [];
+        texts.forEach(text => {
+            if(!text) return;
+            // Ищем сумму и место. Формат Альфы или Сбера.
+            const match = text.match(/(?:Покупка|Оплата|Списание).*?([\\d\\s]+(?:\\.\\d+)?)\\s*[₽р]\\.?\\s*(?:в|на)?\\s*([^\\n]+)/i) ||
+                          text.match(/([\\d\\s]+(?:\\.\\d+)?)\\s*[₽р].*?(?:МСС|Покупка)\\s*([^\\n]+)/i);
             
-            listEl.innerHTML += `
-              <div class="card-glass rounded-2xl p-3 flex items-center justify-between">
-                <div class="flex items-center gap-3 overflow-hidden">
-                  <div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style="background: ${meta.color}20">
-                    <i data-lucide="${meta.icon}" class="w-5 h-5" style="color: ${meta.color}"></i>
-                  </div>
-                  <div class="truncate">
-                    <p class="text-xs font-bold text-white truncate">${t.merchant}</p>
-                    <p class="text-[10px] text-white/50">${t.category} &bull; ${dateStr}</p>
-                  </div>
-                </div>
-                <div class="text-right shrink-0 pl-2">
-                  <span class="text-sm font-bold text-white">-${this.formatCurrency(t.amount)}</span>
-                </div>
-              </div>
-            `;
-          });
-        }
-
-        this.renderDashboardCharts(activeTxs);
-      }
-
-      renderDashboardCharts(activeTxs) {
-        if (!activeTxs) {
-          activeTxs = this.txs.filter(t => {
-            const d = new Date(t.ts * 1000);
-            return d.getFullYear() === 2026 && d.getMonth() === 8;
-          });
-          if (activeTxs.length === 0) activeTxs = this.txs;
-        }
-
-        // Daily aggregated spend chart for September (1..23)
-        const dailyTotals = Array(23).fill(0);
-        activeTxs.forEach(t => {
-          const d = new Date(t.ts * 1000);
-          if (d.getMonth() === 8 && d.getFullYear() === 2026) {
-            const day = d.getDate();
-            if (day >= 1 && day <= 23) {
-              dailyTotals[day - 1] += t.amount;
-            }
-          }
-        });
-
-        const ctxDash = document.getElementById('dashboardChart');
-        if (ctxDash) {
-          if (this.dashboardChart) this.dashboardChart.destroy();
-          this.dashboardChart = new Chart(ctxDash, {
-            type: 'line',
-            data: {
-              labels: Array.from({ length: 23 }, (_, i) => `${i + 1} сен`),
-              datasets: [{
-                data: dailyTotals,
-                borderColor: '#EF3124',
-                backgroundColor: 'rgba(239, 49, 36, 0.12)',
-                borderWidth: 2.5,
-                fill: true,
-                tension: 0.35,
-                pointRadius: 2,
-                pointHoverRadius: 5
-              }]
-            },
-            options: {
-              responsive: true,
-              maintainAspectRatio: false,
-              plugins: { legend: { display: false } },
-              scales: {
-                x: {
-                  grid: { display: false },
-                  ticks: { color: 'rgba(255,255,255,0.4)', font: { size: 9 }, maxTicksLimit: 7 }
-                },
-                y: {
-                  grid: { color: 'rgba(255,255,255,0.06)' },
-                  ticks: { color: 'rgba(255,255,255,0.4)', font: { size: 9 }, maxTicksLimit: 4 }
+            if(match) {
+                const amount = parseFloat(match[1].replace(/\\s/g, ''));
+                let merchant = match[2].split('Баланс')[0].split('Карта')[0].trim();
+                
+                let cat = 'Другое';
+                const lowerMerch = merchant.toLowerCase();
+                for(let [cName, keywords] of Object.entries(categoryMap)) {
+                    if(keywords.some(kw => lowerMerch.includes(kw))) {
+                        cat = cName; break;
+                    }
                 }
-              }
+                
+                newTxs.push({
+                    id: Date.now() + Math.random(),
+                    amount: amount,
+                    merchant: merchant,
+                    category: cat,
+                    date: new Date().toISOString() // Упрощенно берем текущую дату парсинга
+                });
             }
-          });
-        }
-
-        // Donut breakdown chart
-        const catMap = {};
-        activeTxs.forEach(t => {
-          catMap[t.category] = (catMap[t.category] || 0) + t.amount;
         });
 
-        const sortedCats = Object.entries(catMap).sort((a, b) => b[1] - a[1]);
-        const catLabels = sortedCats.map(c => c[0]);
-        const catData = sortedCats.map(c => c[1]);
-        const catColors = sortedCats.map(c => (CATEGORIES[c[0]] || CATEGORIES['Прочее']).color);
+        if(newTxs.length > 0) {
+            transactions = [...newTxs, ...transactions]; // Новые сверху
+            // Убираем дубликаты по сумме и месту для простоты демо
+            transactions = transactions.filter((v,i,a)=>a.findIndex(t=>(t.amount===v.amount && t.merchant===v.merchant))===i);
+            localStorage.setItem('dzyn_txs', JSON.stringify(transactions));
+            alert(`Добавлено новых операций: ${newTxs.length}`);
+        }
+    }
 
-        const ctxDonut = document.getElementById('categoryDonutChart');
-        if (ctxDonut) {
-          if (this.donutChart) this.donutChart.destroy();
-          this.donutChart = new Chart(ctxDonut, {
+    // --- ОТРИСОВКА ГЛАВНОЙ ---
+    function renderOverview() {
+        if(!transactions.length) return;
+        
+        let total = 0;
+        let catTotals = {};
+        let listHTML = '';
+
+        transactions.forEach((tx, i) => {
+            total += tx.amount;
+            catTotals[tx.category] = (catTotals[tx.category] || 0) + tx.amount;
+            
+            if(i < 15) { // Показываем последние 15
+                const icon = categoryIcons[tx.category] || categoryIcons['Другое'];
+                listHTML += \`
+                    <div class="transaction-item">
+                        <div class="tx-left">
+                            <div class="tx-icon">\${icon}</div>
+                            <div class="tx-details">
+                                <span class="tx-title">\${tx.merchant}</span>
+                                <span class="tx-date">\${tx.category}</span>
+                            </div>
+                        </div>
+                        <div class="tx-amount">-\${tx.amount.toLocaleString('ru-RU')} ₽</div>
+                    </div>
+                \`;
+            }
+        });
+
+        document.getElementById('mainTotal').innerText = \`\${total.toLocaleString('ru-RU')} ₽\`;
+        document.getElementById('txList').innerHTML = listHTML;
+
+        // График Chart.js
+        const ctx = document.getElementById('categoryChart').getContext('2d');
+        if(myChart) myChart.destroy();
+        
+        const labels = Object.keys(catTotals);
+        const data = Object.values(catTotals);
+        
+        myChart = new Chart(ctx, {
             type: 'doughnut',
             data: {
-              labels: catLabels,
-              datasets: [{
-                data: catData.length ? catData : [1],
-                backgroundColor: catColors.length ? catColors : ['#333'],
-                borderWidth: 0,
-                hoverOffset: 4
-              }]
+                labels: labels,
+                datasets: [{
+                    data: data,
+                    backgroundColor: ['#EF3124', '#ff8a80', '#b71c1c', '#ff5252', '#444', '#666', '#888'],
+                    borderWidth: 0
+                }]
             },
             options: {
-              responsive: true,
-              maintainAspectRatio: false,
-              cutout: '72%',
-              plugins: { legend: { display: false } }
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '75%',
+                plugins: {
+                    legend: { position: 'right', labels: { color: '#fff', boxWidth: 12, font: {size: 11} } }
+                }
             }
-          });
+        });
+    }
+
+    // --- УМНАЯ АНАЛИТИКА И ЭКОНОМИЯ ---
+    function renderAnalyticsTab() {
+        const filterList = document.getElementById('filterList');
+        if(!transactions.length) {
+            filterList.innerHTML = '<div style="color:#888; text-align:center;">Загрузите данные для аналитики.</div>';
+            return;
         }
 
-        // Category progress bars
-        const barsContainer = document.getElementById('dashCategoryBars');
-        barsContainer.innerHTML = '';
-        document.getElementById('dashCategoryCountLabel').textContent = `${sortedCats.length} категорий`;
-
-        const maxCat = sortedCats.length ? sortedCats[0][1] : 1;
-        sortedCats.slice(0, 4).forEach(([name, sum]) => {
-          const meta = CATEGORIES[name] || CATEGORIES['Прочее'];
-          const pct = Math.round((sum / maxCat) * 100);
-          barsContainer.innerHTML += `
-            <div class="space-y-1">
-              <div class="flex justify-between text-[11px] font-medium">
-                <span class="text-white/80">${name}</span>
-                <span class="font-bold text-white">${this.formatCurrency(sum)}</span>
-              </div>
-              <div class="w-full bg-white/5 h-1.5 rounded-full overflow-hidden">
-                <div class="h-full rounded-full" style="width: ${pct}%; background-color: ${meta.color}"></div>
-              </div>
-            </div>
-          `;
-        });
-      }
-
-      renderMonthsView() {
-        const monthNames = [
-          'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
-          'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'
-        ];
-
-        // Group transactions by YYYY-MM
-        const monthsMap = {};
-        this.txs.forEach(t => {
-          const d = new Date(t.ts * 1000);
-          const key = `${d.getFullYear()}-${String(d.getMonth()).padStart(2, '0')}`;
-          if (!monthsMap[key]) monthsMap[key] = [];
-          monthsMap[key].push(t);
+        // Собираем уникальные категории и считаем их суммы
+        let catTotals = {};
+        transactions.forEach(tx => {
+            catTotals[tx.category] = (catTotals[tx.category] || 0) + tx.amount;
         });
 
-        // Ensure current September and August exist in list
-        if (!monthsMap['2026-08']) monthsMap['2026-08'] = [];
-        if (!monthsMap['2026-07']) monthsMap['2026-07'] = [];
-
-        const sortedKeys = Object.keys(monthsMap).sort().reverse();
-        const selector = document.getElementById('monthsSelector');
-        selector.innerHTML = '';
-
-        sortedKeys.forEach(k => {
-          const [year, mIndex] = k.split('-');
-          const mLabel = `${monthNames[parseInt(mIndex)]} ${year}`;
-          const isSelected = k === this.selectedMonthKey;
-          
-          const pill = document.createElement('button');
-          pill.className = `tap-scale shrink-0 px-3.5 py-1.5 rounded-full text-xs font-semibold border ${
-            isSelected 
-              ? 'bg-brand-red border-brand-red text-white shadow-md shadow-brand-red/30' 
-              : 'bg-white/5 border-white/10 text-white/60 hover:text-white'
-          }`;
-          pill.textContent = mLabel;
-          pill.addEventListener('click', () => {
-            this.selectedMonthKey = k;
-            this.renderMonthsView();
-          });
-          selector.appendChild(pill);
-        });
-
-        const activeMonthTxs = monthsMap[this.selectedMonthKey] || [];
-        const [selYear, selMIdx] = this.selectedMonthKey.split('-');
-        document.getElementById('selectedMonthName').textContent = `${monthNames[parseInt(selMIdx)]} ${selYear}`;
-
-        const monthTotal = activeMonthTxs.reduce((s, t) => s + t.amount, 0);
-        document.getElementById('monthTotalAmount').textContent = this.formatCurrency(monthTotal);
-        document.getElementById('monthTotalTxCount').textContent = activeMonthTxs.length;
-
-        // Render Weekly Chart
-        const weekBuckets = [0, 0, 0, 0];
-        activeMonthTxs.forEach(t => {
-          const day = new Date(t.ts * 1000).getDate();
-          const wIdx = Math.min(3, Math.floor((day - 1) / 7));
-          weekBuckets[wIdx] += t.amount;
-        });
-
-        const ctxWeeks = document.getElementById('monthlyWeeksChart');
-        if (ctxWeeks) {
-          if (this.weeksChart) this.weeksChart.destroy();
-          this.weeksChart = new Chart(ctxWeeks, {
-            type: 'bar',
-            data: {
-              labels: ['1-7 число', '8-14 число', '15-21 число', '22+ число'],
-              datasets: [{
-                data: weekBuckets,
-                backgroundColor: '#EF3124',
-                borderRadius: 8
-              }]
-            },
-            options: {
-              responsive: true,
-              maintainAspectRatio: false,
-              plugins: { legend: { display: false } },
-              scales: {
-                x: { grid: { display: false }, ticks: { color: 'rgba(255,255,255,0.4)', font: { size: 9 } } },
-                y: { grid: { color: 'rgba(255,255,255,0.06)' }, ticks: { color: 'rgba(255,255,255,0.4)', font: { size: 9 } } }
-              }
-            }
-          });
-        }
-
-        // List transactions for selected month
-        const mList = document.getElementById('monthTxList');
-        mList.innerHTML = '';
-        if (activeMonthTxs.length === 0) {
-          mList.innerHTML = '<div class="text-center py-6 text-xs text-white/40">За этот месяц операций не найдено</div>';
-        } else {
-          activeMonthTxs.forEach(t => {
-            const meta = CATEGORIES[t.category] || CATEGORIES['Прочее'];
-            const dateStr = new Date(t.ts * 1000).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' });
-            mList.innerHTML += `
-              <div class="card-glass rounded-2xl p-3 flex items-center justify-between">
-                <div class="flex items-center gap-3">
-                  <div class="w-8 h-8 rounded-xl flex items-center justify-center" style="background: ${meta.color}20">
-                    <i data-lucide="${meta.icon}" class="w-4 h-4" style="color: ${meta.color}"></i>
-                  </div>
-                  <div>
-                    <span class="text-xs font-bold text-white block">${t.merchant}</span>
-                    <span class="text-[10px] text-white/40">${dateStr}</span>
-                  </div>
+        let html = '';
+        Object.keys(catTotals).sort((a,b) => catTotals[b] - catTotals[a]).forEach(cat => {
+            const sum = catTotals[cat];
+            const isTarget = ['Фастфуд', 'Игры и Софт', 'Подписки и Сервисы', 'Развлечения'].includes(cat);
+            // По умолчанию ставим галочки на "необязательных" тратах
+            html += \`
+                <div class="filter-item">
+                    <input type="checkbox" class="cat-filter" value="\${cat}" data-sum="\${sum}" \${isTarget ? 'checked' : ''} onchange="calculateSavings()">
+                    <label>
+                        <span>\${categoryIcons[cat] || '💳'} \${cat}</span>
+                        <span style="font-weight:bold;">\${sum.toLocaleString('ru-RU')} ₽</span>
+                    </label>
                 </div>
-                <span class="text-xs font-bold text-white">-${this.formatCurrency(t.amount)}</span>
-              </div>
-            `;
-          });
+            \`;
+        });
+        filterList.innerHTML = html;
+        calculateSavings();
+    }
+
+    function calculateSavings() {
+        const checkboxes = document.querySelectorAll('.cat-filter:checked');
+        let potentialSavings = 0;
+        let selectedCats = [];
+
+        checkboxes.forEach(cb => {
+            potentialSavings += parseFloat(cb.getAttribute('data-sum'));
+            selectedCats.push(cb.value);
+        });
+
+        document.getElementById('savingsAmount').innerText = \`+ \${potentialSavings.toLocaleString('ru-RU')} ₽\`;
+        
+        let tip = 'Отметьте категории галочками.';
+        if(potentialSavings > 0) {
+            tip = \`Отказ от категорий: <b>\${selectedCats.join(', ')}</b> сохранит вам \${potentialSavings.toLocaleString('ru-RU')} рублей. \`;
+            if(selectedCats.includes('Фастфуд')) tip += '<br>🍔 <i>Совет: готовка дома обходится в среднем в 3 раза дешевле.</i>';
+            if(selectedCats.includes('Игры и Софт')) tip += '<br>🎮 <i>Совет: отложите виртуальные покупки на пару недель, желание часто пропадает.</i>';
         }
-        refreshIcons();
-      }
-
-      renderEconomyView() {
-        const daysMap = [0, 0, 0, 0, 0, 0, 0]; // Sun to Sat
-        const dayNames = ['Воскресенье', 'Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота'];
-
-        let fastfoodSum = 0;
-        let gamesSum = 0;
-        let taxiSum = 0;
-        let subsSum = 0;
-
-        this.txs.forEach(t => {
-          const d = new Date(t.ts * 1000);
-          daysMap[d.getDay()] += t.amount;
-
-          if (t.category === 'Фастфуд') fastfoodSum += t.amount;
-          if (t.category === 'Игры') gamesSum += t.amount;
-          if (t.category === 'Транспорт') taxiSum += t.amount;
-          if (t.category === 'Подписки') subsSum += t.amount;
-        });
-
-        // Peak day detection
-        let peakDayIdx = 0;
-        daysMap.forEach((v, idx) => {
-          if (v > daysMap[peakDayIdx]) peakDayIdx = idx;
-        });
-
-        const peakBox = document.getElementById('ecoPeakDayBox');
-        peakBox.innerHTML = `
-          <div class="flex items-center justify-between text-xs">
-            <span class="font-bold text-white">${dayNames[peakDayIdx]}</span>
-            <span class="text-brand-orange font-bold">${this.formatCurrency(daysMap[peakDayIdx])}</span>
-          </div>
-          <p class="text-[11px] text-white/50 leading-snug">
-            В этот день недели совершается наибольшая часть спонтанных покупок. Рекомендуется установить дневной лимит в приложении банка.
-          </p>
-        `;
-
-        // Projected savings: 30% fastfood, 30% games, 20% taxi, 25% subs
-        const potFastfood = Math.round(fastfoodSum * 0.35);
-        const potGames = Math.round(gamesSum * 0.30);
-        const potTaxi = Math.round(taxiSum * 0.20);
-        const totalPot = potFastfood + potGames + potTaxi;
-
-        document.getElementById('ecoTotalPotential').textContent = `~${this.formatCurrency(totalPot)}`;
-
-        // Micro-expenses breakdown cards
-        const microContainer = document.getElementById('ecoMicroExpenses');
-        microContainer.innerHTML = `
-          <div class="p-3 bg-black/40 rounded-2xl border border-white/5 flex items-center justify-between">
-            <div class="flex items-center gap-2.5">
-              <div class="w-7 h-7 rounded-lg bg-amber-500/20 text-amber-500 flex items-center justify-center">
-                <i data-lucide="coffee" class="w-3.5 h-3.5"></i>
-              </div>
-              <span class="text-xs font-semibold">Фастфуд и кофе</span>
-            </div>
-            <div class="text-right">
-              <span class="text-xs font-bold text-white block">${this.formatCurrency(fastfoodSum)}</span>
-              <span class="text-[10px] text-brand-green">выгода: +${this.formatCurrency(potFastfood)}</span>
-            </div>
-          </div>
-
-          <div class="p-3 bg-black/40 rounded-2xl border border-white/5 flex items-center justify-between">
-            <div class="flex items-center gap-2.5">
-              <div class="w-7 h-7 rounded-lg bg-emerald-500/20 text-emerald-500 flex items-center justify-center">
-                <i data-lucide="gamepad-2" class="w-3.5 h-3.5"></i>
-              </div>
-              <span class="text-xs font-semibold">Игры и скины</span>
-            </div>
-            <div class="text-right">
-              <span class="text-xs font-bold text-white block">${this.formatCurrency(gamesSum)}</span>
-              <span class="text-[10px] text-brand-green">выгода: +${this.formatCurrency(potGames)}</span>
-            </div>
-          </div>
-        `;
-
-        // Tailored tips
-        const tipsContainer = document.getElementById('ecoTipsList');
-        tipsContainer.innerHTML = `
-          <div class="card-glass rounded-2xl p-4 flex gap-3">
-            <div class="w-8 h-8 rounded-xl bg-brand-red/20 text-brand-red flex items-center justify-center shrink-0">
-              <i data-lucide="zap" class="w-4 h-4"></i>
-            </div>
-            <div class="space-y-1">
-              <h5 class="text-xs font-bold text-white">Правило 24 часов на донаты и скины</h5>
-              <p class="text-[11px] text-white/60 leading-relaxed">
-                Покупки в Lis-skins и Steam составили <span class="text-white font-semibold">${this.formatCurrency(gamesSum)}</span>. Отложите оплату на сутки: 60% желаний исчезают сами.
-              </p>
+        
+        document.getElementById('smartTip').innerHTML = tip;
+    }
+</script>
+</body>
+</html>
