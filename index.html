@@ -3,112 +3,156 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Финансовый Аналитик</title>
-    <!-- Подключаем библиотеку для чтения Excel/CSV и графики Chart.js -->
+    <title>Умные Финансы</title>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
             --accent: #EF3124;
-            --bg: #0d0d0e;
+            --bg: #000000;
             --card-bg: #1c1c1e;
-            --text-main: #f5f5f7;
+            --text-main: #ffffff;
             --text-muted: #8e8e93;
             --border: #2c2c2e;
+            --safe-area-bottom: env(safe-area-inset-bottom, 20px);
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
-        body { background-color: var(--bg); color: var(--text-main); min-height: 100vh; }
+        body { background-color: var(--bg); color: var(--text-main); overscroll-behavior-y: none; }
         
-        .container { max-width: 520px; margin: 0 auto; padding: 20px 16px 80px; }
+        .app-container { max-width: 500px; margin: 0 auto; height: 100vh; display: flex; flex-direction: column; position: relative; }
         
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .header h1 { font-size: 24px; font-weight: 800; letter-spacing: -0.5px; }
+        .header { display: flex; justify-content: space-between; align-items: center; padding: 20px 20px 10px; background: rgba(0,0,0,0.9); position: sticky; top: 0; z-index: 10; border-bottom: 1px solid var(--border); }
+        .header h1 { font-size: 24px; font-weight: 800; }
+        .btn-clear { background: transparent; border: 1px solid var(--border); color: var(--text-muted); padding: 6px 12px; border-radius: 10px; font-size: 12px; cursor: pointer; }
         
-        .card { background: var(--card-bg); border-radius: 20px; padding: 20px; margin-bottom: 16px; border: 1px solid var(--border); }
-        .card-title { font-size: 14px; color: var(--text-muted); font-weight: 500; margin-bottom: 6px; }
+        .content { flex: 1; overflow-y: auto; padding: 15px 20px 100px; }
+        .view-section { display: none; animation: fadeIn 0.3s ease; }
+        .view-section.active { display: block; }
         
-        .balance { font-size: 34px; font-weight: 800; color: #fff; }
-        .meta-info { font-size: 12px; color: var(--text-muted); margin-top: 6px; }
+        .card { background: var(--card-bg); border-radius: 20px; padding: 20px; margin-bottom: 15px; }
+        .card-title { font-size: 16px; font-weight: 700; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; }
+        
+        .balance { font-size: 34px; font-weight: 800; }
+        .meta-info { font-size: 12px; color: var(--text-muted); margin-top: 5px; }
 
-        /* Зона загрузки файлов */
-        .upload-box {
-            border: 2px dashed #3a3a3c;
-            border-radius: 16px;
-            padding: 24px 16px;
-            text-align: center;
-            cursor: pointer;
-            transition: border-color 0.2s, background-color 0.2s;
-            margin-bottom: 16px;
-            background: rgba(255, 255, 255, 0.02);
-        }
-        .upload-box:hover, .upload-box.dragover { border-color: var(--accent); background: rgba(239, 49, 36, 0.05); }
+        .upload-box { border: 2px dashed #3a3a3c; border-radius: 16px; padding: 20px; text-align: center; cursor: pointer; margin-bottom: 15px; background: rgba(255,255,255,0.02); }
         .upload-box input { display: none; }
-        .upload-icon { font-size: 32px; margin-bottom: 8px; }
-        .upload-title { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
-        .upload-desc { font-size: 12px; color: var(--text-muted); }
+        .upload-icon { font-size: 28px; margin-bottom: 5px; }
+        .upload-title { font-size: 14px; font-weight: 600; }
 
-        .supported-banks { display: flex; gap: 6px; justify-content: center; margin-top: 10px; flex-wrap: wrap; }
-        .bank-badge { font-size: 11px; padding: 3px 8px; border-radius: 8px; background: #2c2c2e; color: #ccc; }
-
-        /* График */
-        .chart-box { position: relative; height: 230px; width: 100%; margin: 10px 0; }
-
-        /* Список транзакций */
+        .chart-container { position: relative; height: 220px; width: 100%; margin: 10px 0; }
+        
+        /* Транзакции */
         .tx-list { display: flex; flex-direction: column; gap: 12px; }
-        .tx-item { display: flex; justify-content: space-between; align-items: center; padding-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.05); }
-        .tx-item:last-child { border-bottom: none; padding-bottom: 0; }
+        .tx-item { display: flex; justify-content: space-between; align-items: center; }
         .tx-left { display: flex; align-items: center; gap: 12px; }
-        .tx-icon { width: 38px; height: 38px; border-radius: 10px; background: rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: center; font-size: 18px; }
+        .tx-icon { width: 40px; height: 40px; border-radius: 12px; background: rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: center; font-size: 18px; }
         .tx-name { font-size: 15px; font-weight: 600; }
         .tx-sub { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
-        .tx-amount { font-size: 15px; font-weight: 700; color: #ff5252; text-align: right; }
+        .tx-amount { font-size: 15px; font-weight: 700; }
 
-        .btn-clear { background: transparent; border: 1px solid var(--border); color: var(--text-muted); padding: 8px 12px; border-radius: 10px; font-size: 12px; cursor: pointer; }
-        .btn-clear:hover { color: #fff; border-color: #666; }
+        /* Аналитика и экономия */
+        .insight-box { background: rgba(239, 49, 36, 0.1); border: 1px solid rgba(239, 49, 36, 0.3); padding: 15px; border-radius: 16px; margin-bottom: 15px; }
+        .insight-title { font-size: 13px; color: #ffcccc; font-weight: 600; margin-bottom: 5px; }
+        .insight-value { font-size: 20px; font-weight: bold; color: var(--accent); }
+        
+        .filter-select { width: 100%; background: #000; color: #fff; border: 1px solid var(--border); padding: 10px 15px; border-radius: 12px; font-size: 14px; outline: none; margin-bottom: 15px; }
+        
+        .savings-list { display: flex; flex-direction: column; gap: 10px; }
+        .savings-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; background: rgba(255,255,255,0.05); border-radius: 12px; cursor: pointer; }
+        .savings-item label { flex: 1; display: flex; justify-content: space-between; align-items: center; margin-left: 10px; font-size: 14px; cursor: pointer; }
+        input[type="checkbox"] { accent-color: var(--accent); width: 20px; height: 20px; }
+
+        /* Навигация */
+        .bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 500px; background: rgba(15,15,15,0.95); border-top: 1px solid var(--border); display: flex; justify-content: space-around; padding: 10px 0 var(--safe-area-bottom); z-index: 100; backdrop-filter: blur(10px); }
+        .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; color: var(--text-muted); font-size: 11px; font-weight: 500; cursor: pointer; }
+        .nav-item.active { color: var(--accent); }
+        .nav-icon { font-size: 22px; margin-bottom: 4px; }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     </style>
 </head>
 <body>
 
-<div class="container">
+<div class="app-container">
     <div class="header">
-        <h1>Финансы</h1>
-        <button class="btn-clear" onclick="clearData()">Очистить всё</button>
+        <h1>Дзынь Аналитика</h1>
+        <button class="btn-clear" onclick="clearData()">Сбросить</button>
     </div>
 
-    <!-- Загрузка выписки любого банка -->
-    <div class="upload-box" id="dropArea" onclick="document.getElementById('fileInput').click()">
-        <input type="file" id="fileInput" accept=".csv, .xlsx, .xls" onchange="handleFile(this.files[0])">
-        <div class="upload-icon">📄</div>
-        <div class="upload-title">Загрузить выписку банка</div>
-        <div class="upload-desc">Нажмите или перетащите файл CSV или Excel</div>
-        <div class="supported-banks">
-            <span class="bank-badge">Альфа-Банк</span>
-            <span class="bank-badge">Т-Банк</span>
-            <span class="bank-badge">Сбербанк</span>
-            <span class="bank-badge">ВТБ</span>
+    <div class="content">
+        <!-- ВКЛАДКА: ОБЗОР -->
+        <div id="view-overview" class="view-section active">
+            <div class="upload-box" onclick="document.getElementById('fileInput').click()">
+                <input type="file" id="fileInput" accept=".csv, .xlsx, .xls" onchange="handleFile(this.files[0])">
+                <div class="upload-icon">📥</div>
+                <div class="upload-title">Загрузить выписку (Excel/CSV)</div>
+                <div class="meta-info">Альфа, Т-Банк, Сбер, ВТБ</div>
+            </div>
+
+            <div class="card" id="mainCard" style="display: none;">
+                <div class="meta-info" style="margin-top: 0; margin-bottom: 5px;">Общие расходы</div>
+                <div class="balance" id="totalExpense">0 ₽</div>
+                <div class="meta-info" id="fileInfo"></div>
+            </div>
+
+            <div class="card" id="chartCard" style="display: none;">
+                <div class="card-title">Категории</div>
+                <div class="chart-container"><canvas id="categoryChart"></canvas></div>
+            </div>
+        </div>
+
+        <!-- ВКЛАДКА: УМНАЯ АНАЛИТИКА -->
+        <div id="view-analytics" class="view-section">
+            <div class="card">
+                <div class="card-title">Анализ расходов</div>
+                <div class="insight-box">
+                    <div class="insight-title">Больше всего вы тратите на:</div>
+                    <div class="insight-value" id="topCategory">Нет данных</div>
+                    <div class="meta-info" id="topCategoryPercent"></div>
+                </div>
+                
+                <h3 style="font-size: 15px; margin-bottom: 10px; margin-top: 20px;">Калькулятор экономии</h3>
+                <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 15px;">Отметьте категории, от которых готовы отказаться в следующем месяце:</p>
+                
+                <div class="insight-box" style="background: rgba(76, 175, 80, 0.1); border-color: rgba(76, 175, 80, 0.3);">
+                    <div class="insight-title" style="color: #a5d6a7;">Потенциальная экономия:</div>
+                    <div class="insight-value" id="savingsAmount" style="color: #4caf50;">0 ₽</div>
+                </div>
+                
+                <div class="savings-list" id="savingsList"></div>
+            </div>
+        </div>
+
+        <!-- ВКЛАДКА: ОПЕРАЦИИ (ФИЛЬТРЫ) -->
+        <div id="view-transactions" class="view-section">
+            <div class="card" style="background: transparent; padding: 0; border: none;">
+                <select class="filter-select" id="catFilter" onchange="renderTransactions()">
+                    <option value="all">Все категории</option>
+                </select>
+                
+                <div class="tx-list" id="txList">
+                    <div style="text-align: center; color: var(--text-muted); margin-top: 20px;">Загрузите выписку для просмотра операций</div>
+                </div>
+            </div>
         </div>
     </div>
 
-    <!-- Общая сумма -->
-    <div class="card">
-        <div class="card-title">Общие расходы по выписке</div>
-        <div class="balance" id="totalExpense">0 ₽</div>
-        <div class="meta-info" id="fileInfo">Выписка ещё не загружена</div>
-    </div>
-
-    <!-- График категорий -->
-    <div class="card" id="chartCard" style="display: none;">
-        <div class="card-title">Распределение по категориям</div>
-        <div class="chart-box">
-            <canvas id="categoryChart"></canvas>
+    <!-- НИЖНЯЯ НАВИГАЦИЯ -->
+    <div class="bottom-nav">
+        <div class="nav-item active" onclick="switchTab('overview', this)">
+            <div class="nav-icon">📊</div>
+            <span>Обзор</span>
         </div>
-    </div>
-
-    <!-- Список операций -->
-    <div class="card" id="txCard" style="display: none;">
-        <div class="card-title" style="margin-bottom: 12px;">Операции</div>
-        <div class="tx-list" id="txList"></div>
+        <div class="nav-item" onclick="switchTab('analytics', this)">
+            <div class="nav-icon">💡</div>
+            <span>Аналитика</span>
+        </div>
+        <div class="nav-item" onclick="switchTab('transactions', this)">
+            <div class="nav-icon">📋</div>
+            <span>Операции</span>
+        </div>
     </div>
 </div>
 
@@ -117,99 +161,73 @@
     let transactions = [];
 
     const categoryRules = {
-        'Супермаркеты': ['пятерочка', 'магнит', 'перекресток', 'ашан', 'лента', 'спар', 'вкусвилл', 'миндаль', 'пеликан', 'витаград', 'продукты', 'супермаркет'],
-        'Фастфуд и Кафе': ['вкусно', 'burger king', 'kfc', 'бургер', 'додо', 'пицца', 'шаурма', 'ростикс', 'ресторан', 'кафе', 'кофе', 'столовая'],
-        'Игры и Софт': ['lis-skins', 'majestic', 'steam', 'epic games', 'playstation', 'vk play', 'blizzard'],
-        'Подписки и Связь': ['vk music', 'yandex', 'яндекс', 'подписка', 'pure', 'twinby', 'mamba', 'telegram', 'мегафон', 'мтс', 'билайн', 'tele2', 'т-мобайл'],
-        'Развлечения': ['mori cinema', 'кино', 'royal forest', 'парк', 'билет', 'театр', 'отдых'],
-        'Транспорт': ['яндекс.такси', 'такси', 'каршеринг', 'метро', 'ржд', 'авиа', 'азс', 'бензин', 'лукойл', 'газпромнефть'],
-        'Маркетплейсы': ['ozon', 'wildberries', 'вайлдберриз', 'aliexpress', 'мегамаркет', 'яндекс маркет'],
-        'Аптеки': ['аптека', 'планета здоровья', 'вита', 'фарм'],
+        'Супермаркеты': ['пятерочка', 'магнит', 'перекресток', 'ашан', 'лента', 'спар', 'вкусвилл', 'миндаль', 'пеликан', 'витаград', 'продукты'],
+        'Фастфуд и Кафе': ['вкусно', 'burger king', 'kfc', 'бургер', 'додо', 'пицца', 'шаурма', 'ростикс', 'ресторан', 'кафе', 'кофе', 'столовая', 'доставка'],
+        'Игры и Софт': ['lis-skins', 'majestic', 'steam', 'epic games', 'playstation', 'vk play'],
+        'Подписки и Связь': ['vk music', 'yandex', 'яндекс', 'подписка', 'pure', 'twinby', 'mamba', 'telegram', 'мегафон', 'мтс', 'билайн', 'tele2'],
+        'Развлечения': ['mori cinema', 'кино', 'royal forest', 'парк', 'билет', 'клуб', 'афиша'],
+        'Транспорт': ['яндекс.такси', 'такси', 'каршеринг', 'метро', 'ржд', 'авиа', 'бензин', 'азс', 'лукойл'],
+        'Маркетплейсы': ['ozon', 'wildberries', 'aliexpress', 'мегамаркет'],
+        'Здоровье': ['аптека', 'планета здоровья', 'вита', 'медицина', 'клиника'],
         'Переводы': ['перевод', 'пополнение', 'sbp', 'сбп']
     };
 
     const icons = {
         'Супермаркеты': '🛒', 'Фастфуд и Кафе': '🍔', 'Игры и Софт': '🎮',
         'Подписки и Связь': '📱', 'Развлечения': '🎬', 'Транспорт': '🚕',
-        'Маркетплейсы': '🛍️', 'Аптеки': '💊', 'Переводы': '💸', 'Другое': '💳'
+        'Маркетплейсы': '🛍️', 'Здоровье': '💊', 'Переводы': '💸', 'Другое': '💳'
     };
 
     window.onload = function() {
-        const saved = localStorage.getItem('universal_tx_data');
+        const saved = localStorage.getItem('dzyn_smart_data');
         if (saved) {
             try {
                 transactions = JSON.parse(saved);
-                renderAll();
+                if (transactions.length > 0) updateUI();
             } catch(e) {}
         }
-        setupDragAndDrop();
     };
 
-    function setupDragAndDrop() {
-        const dropArea = document.getElementById('dropArea');
-        ['dragenter', 'dragover'].forEach(e => {
-            dropArea.addEventListener(e, (evt) => { evt.preventDefault(); dropArea.classList.add('dragover'); });
-        });
-        ['dragleave', 'drop'].forEach(e => {
-            dropArea.addEventListener(e, (evt) => { evt.preventDefault(); dropArea.classList.remove('dragover'); });
-        });
-        dropArea.addEventListener('drop', (evt) => {
-            const files = evt.dataTransfer.files;
-            if (files.length > 0) handleFile(files[0]);
-        });
+    function switchTab(tabId, element) {
+        document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+        document.getElementById('view-' + tabId).classList.add('active');
+        element.classList.add('active');
     }
 
     function handleFile(file) {
         if (!file) return;
         const reader = new FileReader();
-
         reader.onload = function(e) {
             const data = new Uint8Array(e.target.result);
             const workbook = XLSX.read(data, { type: 'array', cellDates: true });
-            
-            const firstSheetName = workbook.SheetNames[0];
-            const worksheet = workbook.Sheets[firstSheetName];
-            
-            // Преобразуем лист в матрицу строк для гибкого парсинга разных шапок
-            const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
-            
+            const rows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { header: 1, defval: '' });
             parseBankStatement(rows, file.name);
         };
-
         reader.readAsArrayBuffer(file);
     }
 
-    // Универсальный разбор формата
     function parseBankStatement(rows, fileName) {
         let headerIndex = -1;
         let colDate = -1, colAmount = -1, colName = -1, colCat = -1;
 
-        // Ищем строку с заголовками таблицы
-        for (let i = 0; i < Math.min(rows.length, 25); i++) {
+        for (let i = 0; i < Math.min(rows.length, 30); i++) {
             const row = rows[i].map(c => String(c).toLowerCase().trim());
-            
-            // Проверка ключевых слов заголовков
             const dateIdx = row.findIndex(c => c.includes('дата') || c.includes('date'));
             const amountIdx = row.findIndex(c => c.includes('сумма') || c.includes('amount') || c.includes('расход'));
-            const nameIdx = row.findIndex(c => c.includes('описание') || c.includes('назначение') || c.includes('получатель') || c.includes('место') || c.includes('контрагент'));
+            const nameIdx = row.findIndex(c => c.includes('описание') || c.includes('назначение') || c.includes('получатель') || c.includes('контрагент'));
 
             if (dateIdx !== -1 && amountIdx !== -1) {
-                headerIndex = i;
-                colDate = dateIdx;
-                colAmount = amountIdx;
+                headerIndex = i; colDate = dateIdx; colAmount = amountIdx;
                 colName = nameIdx !== -1 ? nameIdx : -1;
                 colCat = row.findIndex(c => c.includes('категория') || c.includes('category'));
                 break;
             }
         }
 
-        if (headerIndex === -1) {
-            alert('Не удалось распознать формат таблицы. Убедитесь, что загружаете стандартную выписку операций из приложения банка.');
-            return;
-        }
+        if (headerIndex === -1) { alert('Формат выписки не распознан.'); return; }
 
         const newParsed = [];
-
         for (let i = headerIndex + 1; i < rows.length; i++) {
             const row = rows[i];
             if (!row || row.length <= colAmount) continue;
@@ -217,150 +235,146 @@
             let rawAmount = row[colAmount];
             if (rawAmount === undefined || rawAmount === '') continue;
 
-            // Очищаем сумму от пробелов, знаков валюты и преобразуем к float
-            let amountStr = String(rawAmount).replace(/\s/g, '').replace('₽', '').replace('RUR', '').replace(',', '.');
-            let amount = parseFloat(amountStr);
-            if (isNaN(amount)) continue;
-
-            // Нам нужны именно расходы (отрицательные числа в выписках либо явный модуль)
-            // Большинство банков пишут расходы со знаком минус (-250.00), некоторые отдельной колонкой
-            let isExpense = amount < 0 || String(rawAmount).includes('-');
+            let amount = parseFloat(String(rawAmount).replace(/\s/g, '').replace('₽', '').replace(',', '.'));
+            if (isNaN(amount) || amount >= 0 && !String(rawAmount).includes('-')) continue; // Берем только расходы
+            
             amount = Math.abs(amount);
-
             if (amount === 0) continue;
 
             let dateVal = row[colDate] || '';
-            let dateStr = typeof dateVal === 'object' && dateVal instanceof Date 
-                ? dateVal.toLocaleDateString('ru-RU') 
-                : String(dateVal).split(' ')[0];
-
+            let dateStr = typeof dateVal === 'object' ? dateVal.toLocaleDateString('ru-RU') : String(dateVal).split(' ')[0];
             let description = (colName !== -1 && row[colName]) ? String(row[colName]).trim() : '';
             let bankCategory = (colCat !== -1 && row[colCat]) ? String(row[colCat]).trim() : '';
-
             let fullText = (description + ' ' + bankCategory).toLowerCase();
 
-            // Автоопределение категории
             let category = 'Другое';
             for (const [catName, keywords] of Object.entries(categoryRules)) {
-                if (keywords.some(kw => fullText.includes(kw))) {
-                    category = catName;
-                    break;
-                }
+                if (keywords.some(kw => fullText.includes(kw))) { category = catName; break; }
             }
+            if (category === 'Другое' && bankCategory) category = bankCategory;
 
-            // Если категория банка уже информативная
-            if (category === 'Другое' && bankCategory) {
-                category = bankCategory;
-            }
-
-            newParsed.push({
-                amount: amount,
-                name: description || bankCategory || 'Операция',
-                category: category,
-                date: dateStr
-            });
+            newParsed.push({ amount, name: description || bankCategory || 'Операция', category, date: dateStr });
         }
 
-        if (newParsed.length === 0) {
-            alert('В файле не найдено записей о расходах.');
-            return;
-        }
+        if (newParsed.length === 0) { alert('Расходов не найдено.'); return; }
 
         transactions = newParsed;
-        localStorage.setItem('universal_tx_data', JSON.stringify(transactions));
-        localStorage.setItem('universal_tx_meta', fileName + ' (' + transactions.length + ' операций)');
-
-        renderAll();
+        localStorage.setItem('dzyn_smart_data', JSON.stringify(transactions));
+        localStorage.setItem('dzyn_smart_meta', fileName);
+        updateUI();
     }
 
-    function renderAll() {
-        const meta = localStorage.getItem('universal_tx_meta') || (transactions.length + ' операций');
-        document.getElementById('fileInfo').innerText = meta;
+    function updateUI() {
+        if (!transactions.length) return;
+        
+        document.getElementById('mainCard').style.display = 'block';
+        document.getElementById('chartCard').style.display = 'block';
+        document.getElementById('fileInfo').innerText = localStorage.getItem('dzyn_smart_meta') + ' (' + transactions.length + ' операций)';
 
         let total = 0;
         const catMap = {};
-        let listHtml = '';
-
-        for (let tx of transactions) {
+        transactions.forEach(tx => {
             total += tx.amount;
             catMap[tx.category] = (catMap[tx.category] || 0) + tx.amount;
+        });
 
-            const icon = icons[tx.category] || '💳';
-            listHtml += `
+        document.getElementById('totalExpense').innerText = total.toLocaleString('ru-RU', {minimumFractionDigits: 2}) + ' ₽';
+
+        // График
+        const ctx = document.getElementById('categoryChart').getContext('2d');
+        if (myChart) myChart.destroy();
+        myChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: Object.keys(catMap),
+                datasets: [{
+                    data: Object.values(catMap),
+                    backgroundColor: ['#EF3124', '#ff7961', '#ff9800', '#4caf50', '#2196f3', '#9c27b0', '#e91e63', '#607d8b', '#795548'],
+                    borderWidth: 0
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, cutout: '75%', plugins: { legend: { position: 'right', labels: { color: '#fff', boxWidth: 10, font: { size: 10 } } } } }
+        });
+
+        updateAnalytics(catMap, total);
+        updateFilterDropdown(catMap);
+        renderTransactions();
+    }
+
+    function updateAnalytics(catMap, total) {
+        const sortedCats = Object.entries(catMap).sort((a, b) => b[1] - a[1]);
+        
+        if (sortedCats.length > 0) {
+            const topCat = sortedCats[0];
+            const percent = ((topCat[1] / total) * 100).toFixed(1);
+            document.getElementById('topCategory').innerText = `${icons[topCat[0]] || '💳'} ${topCat[0]}`;
+            document.getElementById('topCategoryPercent').innerText = `${topCat[1].toLocaleString('ru-RU')} ₽ (это ${percent}% от всех трат)`;
+        }
+
+        // Калькулятор экономии
+        let html = '';
+        sortedCats.forEach(([cat, sum]) => {
+            const isTarget = ['Фастфуд и Кафе', 'Игры и Софт', 'Подписки и Связь', 'Развлечения', 'Маркетплейсы'].includes(cat);
+            html += `
+                <div class="savings-item">
+                    <input type="checkbox" class="save-cb" value="${sum}" ${isTarget ? 'checked' : ''} onchange="calcSavings()">
+                    <label>
+                        <span>${icons[cat] || '💳'} ${cat}</span>
+                        <span style="font-weight:bold;">${sum.toLocaleString('ru-RU')} ₽</span>
+                    </label>
+                </div>
+            `;
+        });
+        document.getElementById('savingsList').innerHTML = html;
+        calcSavings();
+    }
+
+    function calcSavings() {
+        let saved = 0;
+        document.querySelectorAll('.save-cb:checked').forEach(cb => saved += parseFloat(cb.value));
+        document.getElementById('savingsAmount').innerText = '+ ' + saved.toLocaleString('ru-RU', {minimumFractionDigits: 2}) + ' ₽';
+    }
+
+    function updateFilterDropdown(catMap) {
+        const select = document.getElementById('catFilter');
+        select.innerHTML = '<option value="all">Все категории</option>';
+        Object.keys(catMap).sort().forEach(cat => {
+            select.innerHTML += `<option value="${cat}">${icons[cat] || ''} ${cat}</option>`;
+        });
+    }
+
+    function renderTransactions() {
+        const filter = document.getElementById('catFilter').value;
+        const list = document.getElementById('txList');
+        let html = '';
+
+        const filtered = filter === 'all' ? transactions : transactions.filter(t => t.category === filter);
+        
+        filtered.forEach(tx => {
+            html += `
                 <div class="tx-item">
                     <div class="tx-left">
-                        <div class="tx-icon">${icon}</div>
+                        <div class="tx-icon">${icons[tx.category] || '💳'}</div>
                         <div>
                             <div class="tx-name">${escapeHtml(tx.name)}</div>
                             <div class="tx-sub">${escapeHtml(tx.category)} • ${escapeHtml(tx.date)}</div>
                         </div>
                     </div>
-                    <div class="tx-amount">-${tx.amount.toLocaleString('ru-RU', {minimumFractionDigits: 2, maximumFractionDigits: 2})} ₽</div>
+                    <div class="tx-amount">-${tx.amount.toLocaleString('ru-RU')} ₽</div>
                 </div>
             `;
-        }
-
-        document.getElementById('totalExpense').innerText = total.toLocaleString('ru-RU', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' ₽';
-        document.getElementById('txList').innerHTML = listHtml;
-
-        document.getElementById('chartCard').style.display = 'block';
-        document.getElementById('txCard').style.display = 'block';
-
-        renderChart(catMap);
-    }
-
-    function renderChart(catMap) {
-        const ctx = document.getElementById('categoryChart').getContext('2d');
-        if (myChart) myChart.destroy();
-
-        const labels = Object.keys(catMap);
-        const data = Object.values(catMap);
-
-        myChart = new Chart(ctx, {
-            type: 'doughnut',
-            data: {
-                labels: labels,
-                datasets: [{
-                    data: data,
-                    backgroundColor: [
-                        '#EF3124', '#ff7961', '#ff9800', '#4caf50', 
-                        '#2196f3', '#9c27b0', '#e91e63', '#607d8b', '#795548'
-                    ],
-                    borderWidth: 0
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                cutout: '72%',
-                plugins: {
-                    legend: {
-                        position: 'right',
-                        labels: { color: '#f5f5f7', boxWidth: 12, font: { size: 11 } }
-                    }
-                }
-            }
         });
+        list.innerHTML = html || '<div style="text-align:center; color:#888;">Операций не найдено</div>';
     }
 
     function clearData() {
-        if (!confirm('Очистить загруженные данные?')) return;
-        localStorage.removeItem('universal_tx_data');
-        localStorage.removeItem('universal_tx_meta');
-        transactions = [];
-        if (myChart) myChart.destroy();
-        document.getElementById('totalExpense').innerText = '0 ₽';
-        document.getElementById('fileInfo').innerText = 'Выписка ещё не загружена';
-        document.getElementById('chartCard').style.display = 'none';
-        document.getElementById('txCard').style.display = 'none';
-        document.getElementById('fileInput').value = '';
+        if (!confirm('Удалить данные из браузера?')) return;
+        localStorage.removeItem('dzyn_smart_data');
+        localStorage.removeItem('dzyn_smart_meta');
+        location.reload();
     }
 
-    function escapeHtml(str) {
-        return String(str).replace(/[&<>"']/g, function(m) {
-            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m];
-        });
-    }
+    function escapeHtml(str) { return String(str).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m])); }
 </script>
 </body>
 </html>
